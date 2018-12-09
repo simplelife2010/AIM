@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="pref_sample_rate_list_titles">
+        <item>11025 Hz</item>
+        <item>16000 Hz</item>
+        <item>22050 Hz</item>
+        <item>44100 Hz</item>
+    </string-array>
+    <integer-array name="pref_sample_rate_list_values">
+        <item>11025</item>
+        <item>16000</item>
+        <item>22050</item>
+        <item>44100</item>
+    </integer-array>
+    <string-array name="pref_channel_config_list_titles">
+        <item>Mono</item>
+        <item>Stereo</item>
+    </string-array>
+    <integer-array name="pref_channel_config_list_values">
+        <item>16</item>
+        <item>12</item>
+    </integer-array>
+    <string-array name="pref_encoding_list_titles">
+        <item>PCM 8 bit per sample</item>
+        <item>PCM 16 bit per sample</item>
+    </string-array>
+    <integer-array name="pref_encoding_list_values">
+        <item>3</item>
+        <item>2</item>
+    </integer-array>
+
+    <string-array name="pref_example_list_titles">
+        <item>Always</item>
+        <item>When possible</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_example_list_values">
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>
+
+    <string-array name="pref_sync_frequency_titles">
+        <item>15 minutes</item>
+        <item>30 minutes</item>
+        <item>1 hour</item>
+        <item>3 hours</item>
+        <item>6 hours</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_sync_frequency_values">
+        <item>15</item>
+        <item>30</item>
+        <item>60</item>
+        <item>180</item>
+        <item>360</item>
+        <item>-1</item>
+    </string-array>
+
+    <string-array name="list_preference_entries">
+        <item>Entry 1</item>
+        <item>Entry 2</item>
+        <item>Entry 3</item>
+    </string-array>
+
+    <string-array name="list_preference_entry_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <string-array name="multi_select_list_preference_default_value" />
+</resources>
