@@ -34,7 +34,7 @@
         android:defaultValue="@integer/pref_encoding_default_value"
         android:entries="@array/pref_encoding_list_titles"
         android:entryValues="@array/pref_encoding_list_values"
-        android:key="audio_format"
+        android:key="encoding"
         android:negativeButtonText="@null"
         android:positiveButtonText="@null"
         android:title="@string/pref_title_encoding" />

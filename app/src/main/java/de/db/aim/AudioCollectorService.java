@@ -3,7 +3,6 @@ package de.db.aim;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
@@ -12,6 +11,11 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 
 public class AudioCollectorService extends Service {
+
+    private static final int CHANNEL_CONFIG_MONO = 16;
+    private static final int CHANNEL_CONFIG_STEREO = 12;
+    private static final int ENCODING_PCM_8_BIT = 3;
+    private static final int ENCODING_PCM_16_BIT = 2;
 
     private final IBinder mBinder = new AudioCollectorBinder();
     private AudioRecord mRecorder;
@@ -30,17 +34,51 @@ public class AudioCollectorService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String encodingString = getString(R.string.pref_encoding_key);
+        SharedPreferences sp = sharedPreferences();
+
+        int encoding = sharedPreferences().getInt(getString(R.string.pref_encoding_key),-1);
+        int sampleRate = sharedPreferences().getInt(getString(R.string.pref_sample_rate_key), -1);
+        int channelConfig = sharedPreferences().getInt(getString(R.string.pref_channel_config_key),-1);
+        int bufferSizeInSeconds = sharedPreferences().getInt(getString(R.string.pref_buffer_size_key),-1);
+
+        int bufferSizeInBytes = bufferSizeInSeconds * sampleRate * bytesPerSampleAndChannel(encoding) * numberOfChannels(channelConfig);
 
         mRecorder = new AudioRecord.Builder()
                 .setAudioSource(MediaRecorder.AudioSource.MIC)
                 .setAudioFormat(new AudioFormat.Builder()
-                        .setEncoding(sharedPreferences.getInt(getString(R.string.pref_encoding_key),123))
-                        .setSampleRate(sharedPreferences.getInt(getString(R.string.pref_sample_rate_key), 123))
-                        .setChannelMask(sharedPreferences.getInt(getString(R.string.pref_channel_config_key),123))
+                        .setEncoding(encoding)
+                        .setSampleRate(sampleRate)
+                        .setChannelMask(channelConfig)
                         .build())
-                .setBufferSizeInBytes(sharedPreferences.getInt(getString(R.string.pref_buffer_size_key),123))
+                .setBufferSizeInBytes(bufferSizeInBytes)
                 .build();
+    }
+
+    protected SharedPreferences sharedPreferences() {
+        return PreferenceManager.getDefaultSharedPreferences(this);
+    }
+
+    private int bytesPerSampleAndChannel(int encoding) {
+        if (encoding == ENCODING_PCM_8_BIT) {
+            return 1;
+        }
+        else if (encoding == ENCODING_PCM_16_BIT) {
+            return 2;
+        }
+        else {
+            throw new RuntimeException("Invalid encoding");
+        }
+    }
+
+    private int numberOfChannels(int channelConfig) {
+        if (channelConfig == CHANNEL_CONFIG_MONO) {
+            return 1;
+        } else if (channelConfig == CHANNEL_CONFIG_STEREO) {
+            return 2;
+        } else {
+            throw new RuntimeException("Invalid channel configuration");
+        }
     }
 
     @Override
