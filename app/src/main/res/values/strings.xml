@@ -18,6 +18,9 @@
     <string name="pref_title_buffer_size">Buffer size in seconds</string>
     <string name="pref_buffer_size_key">buffer_size</string>
 
+    <string name="pref_title_poll_period">Poll period in seconds</string>
+    <string name="pref_poll_period_key">poll_period</string>
+
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>
     <string name="pref_header_audio_collector">Audio Collector</string>

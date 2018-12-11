@@ -213,6 +213,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_channel_config_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_encoding_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_buffer_size_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_poll_period_key)));
+
         }
 
         @Override
