@@ -39,12 +39,20 @@
         android:singleLine="true"
         android:title="@string/pref_title_buffer_size" />
     <EditTextPreference
-        android:defaultValue="@integer/pref_poll_period_default_value"
+        android:defaultValue="@integer/pref_chunk_size_default_value"
         android:inputType="number"
-        android:key="poll_period"
+        android:key="chunk_size"
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"
-        android:title="@string/pref_title_poll_period" />
+        android:title="@string/pref_title_chunk_size" />
+    <EditTextPreference
+        android:defaultValue="@integer/pref_frame_length_default_value"
+        android:inputType="number"
+        android:key="frame_length"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_frame_length" />
 
 </PreferenceScreen>

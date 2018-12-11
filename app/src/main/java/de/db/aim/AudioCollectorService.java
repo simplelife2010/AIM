@@ -3,17 +3,12 @@ package de.db.aim;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
-
-import java.nio.ByteBuffer;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class AudioCollectorService extends Service {
 
@@ -26,8 +21,8 @@ public class AudioCollectorService extends Service {
 
     private final IBinder mBinder = new AudioCollectorBinder();
     private AudioRecord mRecorder;
-    private Timer mTimer;
-    private TimerTask mTimerTask;
+
+    private Runnable mWorker;
 
     public AudioCollectorService() {
     }
@@ -48,9 +43,12 @@ public class AudioCollectorService extends Service {
         int sampleRate = integerPreferenceValue(R.string.pref_sample_rate_key);
         int channelConfig = integerPreferenceValue(R.string.pref_channel_config_key);
         int bufferSizeInSeconds = integerPreferenceValue(R.string.pref_buffer_size_key);
-        int pollPeriodInSeconds = integerPreferenceValue(R.string.pref_poll_period_key);
+        int chunkSizeInSeconds = integerPreferenceValue(R.string.pref_chunk_size_key);
+        int frameLengthInSeconds = integerPreferenceValue(R.string.pref_frame_length_key);
 
         int bufferSizeInBytes = bufferSizeInSeconds * sampleRate * bytesPerSampleAndChannel(encoding) * numberOfChannels(channelConfig);
+        int samplesPerFrame = sampleRate * numberOfChannels(channelConfig) * frameLengthInSeconds;
+        int chunkSizeInSamples = sampleRate * chunkSizeInSeconds;
 
         mRecorder = new AudioRecord(
                 MediaRecorder.AudioSource.MIC,
@@ -60,9 +58,10 @@ public class AudioCollectorService extends Service {
                 bufferSizeInBytes);
         Log.i(TAG, "Configuring service...Done");
         Log.i(TAG, "AudioRecord state: " + mRecorder.getState());
-        Log.i(TAG, "Starting to poll audio data each " + pollPeriodInSeconds + " seconds");
+        Log.i(TAG, "Starting to capture audio");
         mRecorder.startRecording();
-        startTimer(1000 * pollPeriodInSeconds);
+        mWorker = new Worker(samplesPerFrame, chunkSizeInSamples);
+        new Thread(mWorker).start();
     }
 
     private int integerPreferenceValue(int key) {
@@ -95,26 +94,6 @@ public class AudioCollectorService extends Service {
         }
     }
 
-    private void startTimer(int pollPeriod) {
-        mTimer = new Timer();
-        initializeTimerTask();
-        mTimer.schedule(mTimerTask, pollPeriod, pollPeriod);
-    }
-
-    private void initializeTimerTask() {
-        mTimerTask = new TimerTask() {
-            public void run() {
-                Log.i(TAG, "Polling audio data...");
-
-                short[] audioData = new short[150000];
-                int i = mRecorder.read(audioData, 0,150000);
-                Log.i(TAG, "Return value: " + i);
-
-                Log.i(TAG, "Polling audio data...Done");
-            }
-        };
-    }
-
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -133,5 +112,45 @@ public class AudioCollectorService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return mBinder;
+    }
+
+    private class Worker implements Runnable {
+        public Worker(int samplesPerFrame, int chunkSize) {
+            this.mSamplesPerFrame = samplesPerFrame;
+            this.mChunkSize = chunkSize;
+        }
+
+        private int mSamplesPerFrame;
+        private int mChunkSize;
+
+        @Override
+        public void run() {
+            int currentOffset = 0;
+            short[] audioData = new short[mSamplesPerFrame];
+            while(true) {
+                Log.i(TAG, "Capturing audio data...");
+                Log.i(TAG, "Current offset: " + currentOffset);
+                int samplesToFrameCompletion = mSamplesPerFrame - currentOffset;
+                Log.i(TAG, "Samples to frame completion: " + samplesToFrameCompletion);
+                int samplesToCapture;
+                if (samplesToFrameCompletion < mChunkSize) {
+                    samplesToCapture = samplesToFrameCompletion;
+                } else {
+                    samplesToCapture = mChunkSize;
+                }
+                Log.i(TAG, "Capturing " + samplesToCapture + " samples");
+                int samplesCaptured = mRecorder.read(audioData, currentOffset, samplesToCapture);
+                currentOffset += samplesCaptured;
+                Log.i(TAG, "Samples captured: " + samplesCaptured);
+                Log.i(TAG, "Current offset: " + currentOffset);
+
+                if (currentOffset >= mSamplesPerFrame) {
+                    currentOffset = 0;
+                    Log.i(TAG, "Frame complete, resetting offset");
+                }
+
+                Log.i(TAG, "Capturing audio data...Done");
+            }
+        }
     }
 }
