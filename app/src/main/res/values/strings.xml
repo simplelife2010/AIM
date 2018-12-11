@@ -6,16 +6,16 @@
     <!-- Strings related to Settings -->
 
     <!-- Audio Collector settings -->
-    <string name="pref_title_sample_rate">Sample Rate</string>
+    <string name="pref_title_sample_rate">Sample rate</string>
     <string name="pref_sample_rate_key">sample_rate</string>
 
-    <string name="pref_title_channel_config">Channel Configuration</string>
+    <string name="pref_title_channel_config">Channel configuration</string>
     <string name="pref_channel_config_key">channel_config</string>
 
-    <string name="pref_title_encoding">Audio Format</string>
+    <string name="pref_title_encoding">Encoding</string>
     <string name="pref_encoding_key">encoding</string>
 
-    <string name="pref_title_buffer_size">Buffer Size in seconds</string>
+    <string name="pref_title_buffer_size">Buffer size in seconds</string>
     <string name="pref_buffer_size_key">buffer_size</string>
 
     <!-- Example General settings -->

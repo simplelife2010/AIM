@@ -34,28 +34,26 @@ public class AudioCollectorService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        String encodingString = getString(R.string.pref_encoding_key);
-        SharedPreferences sp = sharedPreferences();
-
-        int encoding = sharedPreferences().getInt(getString(R.string.pref_encoding_key),-1);
-        int sampleRate = sharedPreferences().getInt(getString(R.string.pref_sample_rate_key), -1);
-        int channelConfig = sharedPreferences().getInt(getString(R.string.pref_channel_config_key),-1);
-        int bufferSizeInSeconds = sharedPreferences().getInt(getString(R.string.pref_buffer_size_key),-1);
+        int encoding = integerPreferenceValue(R.string.pref_encoding_key);
+        int sampleRate = integerPreferenceValue(R.string.pref_sample_rate_key);
+        int channelConfig = integerPreferenceValue(R.string.pref_channel_config_key);
+        int bufferSizeInSeconds = integerPreferenceValue(R.string.pref_buffer_size_key);
 
         int bufferSizeInBytes = bufferSizeInSeconds * sampleRate * bytesPerSampleAndChannel(encoding) * numberOfChannels(channelConfig);
 
-        mRecorder = new AudioRecord.Builder()
-                .setAudioSource(MediaRecorder.AudioSource.MIC)
-                .setAudioFormat(new AudioFormat.Builder()
-                        .setEncoding(encoding)
-                        .setSampleRate(sampleRate)
-                        .setChannelMask(channelConfig)
-                        .build())
-                .setBufferSizeInBytes(bufferSizeInBytes)
-                .build();
+        mRecorder = new AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                sampleRate,
+                channelConfig,
+                encoding,
+                bufferSizeInBytes);
     }
 
-    protected SharedPreferences sharedPreferences() {
+    private int integerPreferenceValue(int key) {
+        return Integer.parseInt(sharedPreferences().getString(getString(key), ""));
+    }
+
+    private SharedPreferences sharedPreferences() {
         return PreferenceManager.getDefaultSharedPreferences(this);
     }
 
