@@ -209,14 +209,9 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
             // guidelines.
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_sample_rate_key)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_channel_config_key)));
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_encoding_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_buffer_size_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_chunk_size_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_frame_length_key)));
-
-
         }
 
         @Override
