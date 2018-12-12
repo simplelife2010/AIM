@@ -20,9 +20,25 @@ public class AudioCollectorService extends Service {
     private static final String TAG = "AudioCollectorService";
 
     private final IBinder mBinder = new AudioCollectorBinder();
-    private AudioRecord mRecorder;
 
-    private Runnable mWorker;
+    private AudioRecord mRecorder;
+    private Worker mWorker;
+
+    private SharedPreferences.OnSharedPreferenceChangeListener mPreferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            if (getString(R.string.pref_encoding_key).equals(key) ||
+                    getString(R.string.pref_sample_rate_key).equals(key) ||
+                    getString(R.string.pref_channel_config_key).equals(key) ||
+                    getString(R.string.pref_buffer_size_key).equals(key) ||
+                    getString(R.string.pref_chunk_size_key).equals(key) ||
+                    getString(R.string.pref_frame_length_key).equals(key)) {
+                Log.i(TAG, "A preference has been changed: " + key);
+                AudioCollectorService.this.setupService();
+            }
+        }
+    };
 
     public AudioCollectorService() {
     }
@@ -37,18 +53,30 @@ public class AudioCollectorService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        sharedPreferences().registerOnSharedPreferenceChangeListener(mPreferenceChangeListener);
+        setupService();
+    }
 
+    private void setupService() {
+        if (mWorker != null) {
+            Log.d(TAG, "Stopping worker");
+            mWorker.doStop();
+        }
+        if (mRecorder != null) {
+            Log.d(TAG, "Stopping audio capture");
+            mRecorder.stop();
+        }
         Log.i(TAG, "Configuring service...");
         int encoding = integerPreferenceValue(R.string.pref_encoding_key);
         int sampleRate = integerPreferenceValue(R.string.pref_sample_rate_key);
         int channelConfig = integerPreferenceValue(R.string.pref_channel_config_key);
-        int bufferSizeInSeconds = integerPreferenceValue(R.string.pref_buffer_size_key);
-        int chunkSizeInSeconds = integerPreferenceValue(R.string.pref_chunk_size_key);
-        int frameLengthInSeconds = integerPreferenceValue(R.string.pref_frame_length_key);
+        int bufferSizeInMilliseconds = integerPreferenceValue(R.string.pref_buffer_size_key);
+        int chunkSizeInMilliseconds = integerPreferenceValue(R.string.pref_chunk_size_key);
+        int frameLengthInMilliseconds = integerPreferenceValue(R.string.pref_frame_length_key);
 
-        int bufferSizeInBytes = bufferSizeInSeconds * sampleRate * bytesPerSampleAndChannel(encoding) * numberOfChannels(channelConfig);
-        int samplesPerFrame = sampleRate * numberOfChannels(channelConfig) * frameLengthInSeconds;
-        int chunkSizeInSamples = sampleRate * chunkSizeInSeconds;
+        int bufferSizeInBytes = bufferSizeInMilliseconds * sampleRate * bytesPerSampleAndChannel(encoding) * numberOfChannels(channelConfig) / 1000;
+        int samplesPerFrame = sampleRate * numberOfChannels(channelConfig) * frameLengthInMilliseconds / 1000;
+        int chunkSizeInSamples = sampleRate * chunkSizeInMilliseconds / 1000;
 
         mRecorder = new AudioRecord(
                 MediaRecorder.AudioSource.MIC,
@@ -57,7 +85,7 @@ public class AudioCollectorService extends Service {
                 encoding,
                 bufferSizeInBytes);
         Log.i(TAG, "Configuring service...Done");
-        Log.i(TAG, "AudioRecord state: " + mRecorder.getState());
+        Log.d(TAG, "AudioRecord state: " + mRecorder.getState());
         Log.i(TAG, "Starting to capture audio");
         mRecorder.startRecording();
         mWorker = new Worker(samplesPerFrame, chunkSizeInSamples);
@@ -123,33 +151,43 @@ public class AudioCollectorService extends Service {
         private int mSamplesPerFrame;
         private int mChunkSize;
 
+        private boolean mDoStop = false;
+
+        public synchronized void doStop() {
+            this.mDoStop = true;
+        }
+
+        private synchronized boolean keepRunning() {
+            return this.mDoStop == false;
+        }
+
         @Override
         public void run() {
             int currentOffset = 0;
             short[] audioData = new short[mSamplesPerFrame];
-            while(true) {
-                Log.i(TAG, "Capturing audio data...");
-                Log.i(TAG, "Current offset: " + currentOffset);
+            while(keepRunning()) {
+                Log.d(TAG, "Capturing audio data...");
+                Log.d(TAG, "Current offset: " + currentOffset);
                 int samplesToFrameCompletion = mSamplesPerFrame - currentOffset;
-                Log.i(TAG, "Samples to frame completion: " + samplesToFrameCompletion);
+                Log.d(TAG, "Samples to frame completion: " + samplesToFrameCompletion);
                 int samplesToCapture;
                 if (samplesToFrameCompletion < mChunkSize) {
                     samplesToCapture = samplesToFrameCompletion;
                 } else {
                     samplesToCapture = mChunkSize;
                 }
-                Log.i(TAG, "Capturing " + samplesToCapture + " samples");
+                Log.d(TAG, "Capturing " + samplesToCapture + " samples...");
                 int samplesCaptured = mRecorder.read(audioData, currentOffset, samplesToCapture);
                 currentOffset += samplesCaptured;
-                Log.i(TAG, "Samples captured: " + samplesCaptured);
-                Log.i(TAG, "Current offset: " + currentOffset);
+                Log.d(TAG, "Capturing " + samplesToCapture + " samples...Done");
+                Log.d(TAG, "Current offset: " + currentOffset);
 
                 if (currentOffset >= mSamplesPerFrame) {
                     currentOffset = 0;
-                    Log.i(TAG, "Frame complete, resetting offset");
+                    Log.d(TAG, "Frame complete, resetting offset");
                 }
 
-                Log.i(TAG, "Capturing audio data...Done");
+                Log.d(TAG, "Capturing audio data...Done");
             }
         }
     }

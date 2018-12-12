@@ -15,13 +15,13 @@
     <string name="pref_title_encoding">Encoding</string>
     <string name="pref_encoding_key">encoding</string>
 
-    <string name="pref_title_buffer_size">Buffer size in seconds</string>
+    <string name="pref_title_buffer_size">Buffer size in milliseconds</string>
     <string name="pref_buffer_size_key">buffer_size</string>
 
-    <string name="pref_title_chunk_size">Chunk size in seconds</string>
+    <string name="pref_title_chunk_size">Chunk size in milliseconds</string>
     <string name="pref_chunk_size_key">chunk_size</string>
 
-    <string name="pref_title_frame_length">Frame length in seconds</string>
+    <string name="pref_title_frame_length">Frame length in milliseconds</string>
     <string name="pref_frame_length_key">frame_length</string>
 
     <!-- Example General settings -->
