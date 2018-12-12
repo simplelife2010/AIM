@@ -9,15 +9,18 @@ public class AudioCollectorWorker implements Runnable {
 
     private static final String TAG = "AudioCollectorWorker";
 
+    private AudioCollectorService mService;
     private int mBufferSizeInMilliseconds;
     private int mChunkSizeInMilliseconds;
     private int mFrameLengthInMilliseconds;
     private int mSampleRate = 44100;
     private boolean mDoStop = false;
 
-    AudioCollectorWorker(int bufferSizeInMilliseconds,
+    AudioCollectorWorker(AudioCollectorService service,
+                         int bufferSizeInMilliseconds,
                          int chunkSizeInMilliseconds,
                          int frameLengthInMilliseconds) {
+        this.mService = service;
         this.mBufferSizeInMilliseconds = bufferSizeInMilliseconds;
         this.mChunkSizeInMilliseconds = chunkSizeInMilliseconds;
         this.mFrameLengthInMilliseconds = frameLengthInMilliseconds;
@@ -41,6 +44,7 @@ public class AudioCollectorWorker implements Runnable {
         recorder.startRecording();
         int currentOffset = 0;
         short[] audioData = new short[samplesPerFrame];
+        long timestamp = System.currentTimeMillis();
         while(keepRunning()) {
             Log.d(TAG, "Capturing audio data...");
             Log.d(TAG, "Current offset: " + currentOffset);
@@ -61,6 +65,8 @@ public class AudioCollectorWorker implements Runnable {
             if (currentOffset >= samplesPerFrame) {
                 currentOffset = 0;
                 Log.d(TAG, "Frame complete, resetting offset");
+                publishToListeners(timestamp, audioData);
+                timestamp = System.currentTimeMillis();
             }
 
             Log.d(TAG, "Capturing audio data...Done");
@@ -77,5 +83,12 @@ public class AudioCollectorWorker implements Runnable {
                 channelConfig,
                 encoding,
                 bufferSizeInBytes);
+    }
+
+    private void publishToListeners(long timestamp, short[] audioData) {
+        for (AudioCollectorListener listener : mService.getAudioCollectorListeners()) {
+            Log.d(TAG, "Publishing to listener: " + listener.toString());
+            listener.onNewAudioFrame(timestamp, audioData);
+        }
     }
 }

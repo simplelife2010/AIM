@@ -8,12 +8,16 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class AudioCollectorService extends Service {
 
     private static final String TAG = "AudioCollectorService";
 
     private final IBinder mBinder = new AudioCollectorBinder();
 
+    private List<AudioCollectorListener> mListeners = new ArrayList<AudioCollectorListener>();
     private AudioCollectorWorker mWorker;
 
     private SharedPreferences.OnSharedPreferenceChangeListener mPreferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
@@ -28,13 +32,6 @@ public class AudioCollectorService extends Service {
             }
         }
     };
-
-    class AudioCollectorBinder extends Binder {
-        AudioCollectorService getService() {
-            // Return this instance of LocalService so clients can call public methods
-            return AudioCollectorService.this;
-        }
-    }
 
     @Override
     public void onCreate() {
@@ -65,6 +62,20 @@ public class AudioCollectorService extends Service {
         return mBinder;
     }
 
+    public void registerAudioCollectorListener(AudioCollectorListener listener) {
+        Log.d(TAG, "Adding listener: " + listener.toString());
+        mListeners.add(listener);
+    }
+
+    public void unregisterAudioCollectorListener(AudioCollectorListener listener) {
+        Log.d(TAG, "Removing listener: " + listener.toString());
+        mListeners.remove(listener);
+    }
+
+    List<AudioCollectorListener> getAudioCollectorListeners() {
+        return mListeners;
+    }
+
     private void setupService() {
         stopCapture();
         int bufferSizeInMilliseconds = integerPreferenceValue(R.string.pref_buffer_size_key);
@@ -72,7 +83,8 @@ public class AudioCollectorService extends Service {
         int frameLengthInMilliseconds = integerPreferenceValue(R.string.pref_frame_length_key);
         Log.i(TAG, "Starting to capture audio");
         Log.d(TAG, "Setting up worker...");
-        mWorker = new AudioCollectorWorker(bufferSizeInMilliseconds,
+        mWorker = new AudioCollectorWorker(this,
+                bufferSizeInMilliseconds,
                 chunkSizeInMilliseconds,
                 frameLengthInMilliseconds);
         new Thread(mWorker).start();
@@ -92,5 +104,12 @@ public class AudioCollectorService extends Service {
 
     private SharedPreferences sharedPreferences() {
         return PreferenceManager.getDefaultSharedPreferences(this);
+    }
+
+    class AudioCollectorBinder extends Binder {
+        AudioCollectorService getService() {
+            // Return this instance of LocalService so clients can call public methods
+            return AudioCollectorService.this;
+        }
     }
 }

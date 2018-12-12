@@ -17,7 +17,7 @@ import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
 
-    AudioCollectorService mService;
+    FileWriterService mService;
     boolean mBound = false;
     private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
-            AudioCollectorService.AudioCollectorBinder binder = (AudioCollectorService.AudioCollectorBinder) service;
+            FileWriterService.FileWriterBinder binder = (FileWriterService.FileWriterBinder) service;
             mService = binder.getService();
             mBound = true;
         }
@@ -59,8 +59,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        Intent intent = new Intent(this, AudioCollectorService.class);
+        Intent intent = new Intent(this, FileWriterService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unbindService(mConnection);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 
     @Override

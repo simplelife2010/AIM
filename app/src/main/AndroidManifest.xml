@@ -28,6 +28,10 @@
         <service
             android:name=".AudioCollectorService"
             android:enabled="true"
+            android:exported="true" />
+        <service
+            android:name=".FileWriterService"
+            android:enabled="true"
             android:exported="true"></service>
     </application>
 
