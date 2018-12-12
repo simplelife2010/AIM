@@ -10,6 +10,7 @@ import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 
+import java.io.File;
 import java.util.Date;
 
 public class FileWriterService extends Service implements AudioCollectorListener {
@@ -69,6 +70,11 @@ public class FileWriterService extends Service implements AudioCollectorListener
     @Override
     public void onNewAudioFrame(long timestamp, short[] audioData) {
         Log.i(TAG, "Received audio frame of " + audioData.length + " samples with timestamp: " + (new Date(timestamp)).toString());
+        String audioDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).getAbsolutePath() + "/AIM";
+        new File(audioDirectory).mkdirs();
+        String audioFilename = "AudioCollector_" + String.valueOf(timestamp) + ".wav";
+        Log.d(TAG,"Destination directory for audio files: " + audioDirectory);
+        AudioUtils.writeWavFile(audioDirectory + "/" + audioFilename, audioData);
     }
 
     class FileWriterBinder extends Binder {
