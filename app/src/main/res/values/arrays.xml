@@ -1,6 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <string-array name="pref_buffer_size_titles">
+        <item>500 ms</item>
+        <item>1000 ms</item>
+        <item>1500 ms</item>
+        <item>2000 ms</item>
+    </string-array>
+    <string-array name="pref_buffer_size_values">
+        <item>500</item>
+        <item>1000</item>
+        <item>1500</item>
+        <item>2000</item>
+    </string-array>
+
+    <string-array name="pref_chunk_size_titles">
+        <item>500 ms</item>
+        <item>1000 ms</item>
+        <item>1500 ms</item>
+        <item>2000 ms</item>
+    </string-array>
+    <string-array name="pref_chunk_size_values">
+        <item>500</item>
+        <item>1000</item>
+        <item>1500</item>
+        <item>2000</item>
+    </string-array>
+
+    <string-array name="pref_frame_length_titles">
+        <item>1000 ms</item>
+        <item>2000 ms</item>
+        <item>3000 ms</item>
+        <item>4000 ms</item>
+        <item>5000 ms</item>
+        <item>6000 ms</item>
+        <item>7000 ms</item>
+        <item>8000 ms</item>
+        <item>9000 ms</item>
+        <item>10000 ms</item>
+    </string-array>
+    <string-array name="pref_frame_length_values">
+        <item>1000</item>
+        <item>2000</item>
+        <item>3000</item>
+        <item>4000</item>
+        <item>5000</item>
+        <item>6000</item>
+        <item>7000</item>
+        <item>8000</item>
+        <item>9000</item>
+        <item>10000</item>
+    </string-array>
+
     <string-array name="pref_example_list_titles">
         <item>Always</item>
         <item>When possible</item>

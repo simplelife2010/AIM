@@ -1,11 +1,13 @@
 package de.db.aim;
 
+import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -19,6 +21,7 @@ public class AudioCollectorService extends Service {
 
     private List<AudioCollectorListener> mListeners = new ArrayList<AudioCollectorListener>();
     private AudioCollectorWorker mWorker;
+    private Thread mHandle;
 
     private SharedPreferences.OnSharedPreferenceChangeListener mPreferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
 
@@ -87,14 +90,23 @@ public class AudioCollectorService extends Service {
                 bufferSizeInMilliseconds,
                 chunkSizeInMilliseconds,
                 frameLengthInMilliseconds);
-        new Thread(mWorker).start();
+        mHandle = new Thread(mWorker);
+        mHandle.setName("AudioCollectorWorker");
+        mHandle.start();
         Log.d(TAG,"Setting up worker...Done");
     }
 
     private void stopCapture() {
         if (mWorker != null) {
-            Log.d(TAG, "Stopping worker");
+            Log.d(TAG, "Calling worker.doStop()");
             mWorker.doStop();
+            Log.d(TAG,"Waiting for worker to finish...");
+            try {
+                mHandle.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            Log.d(TAG,"Waiting for worker to finish...Done");
         }
     }
 

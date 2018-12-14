@@ -54,23 +54,23 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
         Intent intent = new Intent(this, FileWriterService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
-        unbindService(mConnection);
     }
 
     @Override
     protected void onDestroy() {
+        unbindService(mConnection);
         super.onDestroy();
     }
 

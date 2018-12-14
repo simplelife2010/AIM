@@ -4,6 +4,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
+import android.os.Process;
 
 public class AudioCollectorWorker implements Runnable {
 
@@ -27,6 +28,7 @@ public class AudioCollectorWorker implements Runnable {
     }
 
     synchronized void doStop() {
+        Log.d(TAG,"Received doStop");
         this.mDoStop = true;
     }
 
@@ -36,6 +38,7 @@ public class AudioCollectorWorker implements Runnable {
 
     @Override
     public void run() {
+        Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
         int samplesPerFrame = mSampleRate * mFrameLengthInMilliseconds / 1000;
         int chunkSizeInSamples = mSampleRate * mChunkSizeInMilliseconds / 1000;
         Log.d(TAG, "Creating recorder...");
@@ -72,6 +75,7 @@ public class AudioCollectorWorker implements Runnable {
             Log.d(TAG, "Capturing audio data...Done");
         }
         recorder.stop();
+        Log.i(TAG,"End of worker thread");
     }
 
     private AudioRecord getRecorder() {
