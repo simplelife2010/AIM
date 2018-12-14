@@ -60,9 +60,10 @@ public class AudioCollectorWorker implements Runnable {
                 samplesToCapture = chunkSizeInSamples;
             }
             Log.d(TAG, "Capturing " + samplesToCapture + " samples...");
+            long now = System.currentTimeMillis();
             int samplesCaptured = recorder.read(audioData, currentOffset, samplesToCapture);
             currentOffset += samplesCaptured;
-            Log.d(TAG, "Capturing " + samplesToCapture + " samples...Done");
+            Log.d(TAG, "Capturing " + samplesToCapture + " samples...Done after " + String.valueOf(System.currentTimeMillis() - now) + " ms");
             Log.d(TAG, "Current offset: " + currentOffset);
 
             if (currentOffset >= samplesPerFrame) {

@@ -11,11 +11,14 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "MainActivity";
 
     FileWriterService mService;
     boolean mBound = false;
@@ -55,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         Intent intent = new Intent(this, FileWriterService.class);
+        Log.d(TAG,"Binding FileWriterService");
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
@@ -70,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        Log.d(TAG,"Unbinding FileWriterService");
         unbindService(mConnection);
         super.onDestroy();
     }

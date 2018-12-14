@@ -42,6 +42,7 @@ public class FileWriterService extends Service implements AudioCollectorListener
     public void onCreate() {
         super.onCreate();
         Intent intent = new Intent(this, AudioCollectorService.class);
+        Log.d(TAG,"Binding AudioCollectorService");
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
@@ -49,16 +50,19 @@ public class FileWriterService extends Service implements AudioCollectorListener
     public void onDestroy() {
         super.onDestroy();
         mService.unregisterAudioCollectorListener(this);
+        Log.d(TAG, "Unbinding AudioCollectorService");
         unbindService(mConnection);
     }
 
     @Override
     public IBinder onBind(Intent intent) {
+        Log.d(TAG, "Service bound");
         return mBinder;
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
+        Log.d(TAG,"Service unbound");
         return super.onUnbind(intent);
     }
 

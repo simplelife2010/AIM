@@ -1,13 +1,11 @@
 package de.db.aim;
 
-import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -51,18 +49,20 @@ public class AudioCollectorService extends Service {
     }
 
     @Override
+    public IBinder onBind(Intent intent) {
+        Log.d(TAG, "Service bound");
+        return mBinder;
+    }
+
+    @Override
     public boolean onUnbind(Intent intent) {
+        Log.d(TAG, "Service unbound");
         return super.onUnbind(intent);
     }
 
     @Override
     public void onRebind(Intent intent) {
         super.onRebind(intent);
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return mBinder;
     }
 
     public void registerAudioCollectorListener(AudioCollectorListener listener) {
