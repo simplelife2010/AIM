@@ -6,7 +6,7 @@ import android.media.MediaRecorder;
 import android.util.Log;
 import android.os.Process;
 
-public class AudioCollectorWorker implements Runnable {
+public class AudioCollectorWorker implements Runnable, AudioRecord.OnRecordPositionUpdateListener {
 
     private static final String TAG = "AudioCollectorWorker";
 
@@ -15,7 +15,12 @@ public class AudioCollectorWorker implements Runnable {
     private int mChunkSizeInMilliseconds;
     private int mFrameLengthInMilliseconds;
     private int mSampleRate = 44100;
+    private int mSamplesPerFrame;
+    private int mChunkSizeInSamples;
+    private long mTimestamp;
     private boolean mDoStop = false;
+    private int mCurrentOffset;
+    private short[] mAudioData;
 
     AudioCollectorWorker(AudioCollectorService service,
                          int bufferSizeInMilliseconds,
@@ -39,44 +44,67 @@ public class AudioCollectorWorker implements Runnable {
     @Override
     public void run() {
         Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
-        int samplesPerFrame = mSampleRate * mFrameLengthInMilliseconds / 1000;
-        int chunkSizeInSamples = mSampleRate * mChunkSizeInMilliseconds / 1000;
+        mSamplesPerFrame = mSampleRate * mFrameLengthInMilliseconds / 1000;
+        mChunkSizeInSamples = mSampleRate * mChunkSizeInMilliseconds / 1000;
         Log.d(TAG, "Creating recorder...");
         AudioRecord recorder = getRecorder();
         Log.d(TAG, "Creating recorder...Done");
+        recorder.setRecordPositionUpdateListener(this);
+        recorder.setPositionNotificationPeriod(mChunkSizeInSamples);
+        mCurrentOffset = 0;
+        mAudioData = new short[mSamplesPerFrame];
+        mTimestamp = System.currentTimeMillis();
         recorder.startRecording();
-        int currentOffset = 0;
-        short[] audioData = new short[samplesPerFrame];
-        long timestamp = System.currentTimeMillis();
         while(keepRunning()) {
-            Log.d(TAG, "Capturing audio data...");
-            Log.d(TAG, "Current offset: " + currentOffset);
-            int samplesToFrameCompletion = samplesPerFrame - currentOffset;
-            Log.d(TAG, "Samples to frame completion: " + samplesToFrameCompletion);
-            int samplesToCapture;
-            if (samplesToFrameCompletion < chunkSizeInSamples) {
-                samplesToCapture = samplesToFrameCompletion;
-            } else {
-                samplesToCapture = chunkSizeInSamples;
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-            Log.d(TAG, "Capturing " + samplesToCapture + " samples...");
-            long now = System.currentTimeMillis();
-            int samplesCaptured = recorder.read(audioData, currentOffset, samplesToCapture);
-            currentOffset += samplesCaptured;
-            Log.d(TAG, "Capturing " + samplesToCapture + " samples...Done after " + String.valueOf(System.currentTimeMillis() - now) + " ms");
-            Log.d(TAG, "Current offset: " + currentOffset);
-
-            if (currentOffset >= samplesPerFrame) {
-                currentOffset = 0;
-                Log.d(TAG, "Frame complete, resetting offset");
-                publishToListeners(timestamp, audioData);
-                timestamp = System.currentTimeMillis();
-            }
-
-            Log.d(TAG, "Capturing audio data...Done");
         }
         recorder.stop();
+        recorder.release();
         Log.i(TAG,"End of worker thread");
+    }
+
+    @Override
+    public void onMarkerReached(AudioRecord audioRecord) {
+        Log.d(TAG,"Entering onMarkerReached()");
+    }
+
+    @Override
+    public void onPeriodicNotification(AudioRecord recorder) {
+        Log.d(TAG,"Entering onPeriodicNotification()");
+        Log.d(TAG,"Current offset: " + mCurrentOffset);
+        int samplesToFrameCompletion = mSamplesPerFrame - mCurrentOffset;
+        Log.d(TAG, "Samples to frame completion: " + samplesToFrameCompletion);
+        int samplesToCapture;
+        if (samplesToFrameCompletion < mChunkSizeInSamples) {
+            samplesToCapture = samplesToFrameCompletion;
+        } else {
+            samplesToCapture = mChunkSizeInSamples;
+        }
+        Log.d(TAG, "Capturing " + samplesToCapture + " samples...");
+        int samplesCaptured = recorder.read(mAudioData, mCurrentOffset, samplesToCapture);
+        mCurrentOffset += samplesCaptured;
+        Log.d(TAG, "Capturing " + samplesToCapture + " samples...Done");
+        if (mCurrentOffset >= mSamplesPerFrame) {
+            Log.d(TAG, "Frame complete, resetting offset");
+            mCurrentOffset = 0;
+            int leftOverSamples = mChunkSizeInSamples - samplesCaptured;
+            long newTimestamp = System.currentTimeMillis() - leftOverSamples * mSampleRate * 1000;
+            publishToListeners(mTimestamp, mAudioData);
+            mTimestamp = newTimestamp;
+            if (leftOverSamples > 0) {
+                Log.d(TAG, "Capturing " + leftOverSamples + " left over samples...");
+                samplesCaptured = recorder.read(mAudioData, mCurrentOffset, leftOverSamples);
+                if (samplesCaptured < 0) {
+                    throw new RuntimeException("AudioRecord.read() returned " + String.valueOf(samplesCaptured));
+                }
+                mCurrentOffset += samplesCaptured;
+                Log.d(TAG, "Capturing " + samplesToCapture + " samples...Done");
+            }
+        }
     }
 
     private AudioRecord getRecorder() {

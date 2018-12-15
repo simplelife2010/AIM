@@ -36,6 +36,7 @@ public class AudioCollectorService extends Service {
 
     @Override
     public void onCreate() {
+        Log.d(TAG,"Creating service");
         super.onCreate();
         sharedPreferences().registerOnSharedPreferenceChangeListener(mPreferenceChangeListener);
         setupService();
@@ -43,6 +44,7 @@ public class AudioCollectorService extends Service {
 
     @Override
     public void onDestroy() {
+        Log.d(TAG,"Destroying service");
         super.onDestroy();
         stopCapture();
         sharedPreferences().unregisterOnSharedPreferenceChangeListener(mPreferenceChangeListener);

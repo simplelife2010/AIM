@@ -6,6 +6,8 @@
     <!-- Strings related to Settings -->
 
     <!-- Audio Collector settings -->
+    <string name="pref_header_audio_collector">Audio Collector</string>
+
     <string name="pref_title_buffer_size">Buffer size</string>
     <string name="pref_buffer_size_key">buffer_size</string>
 
@@ -15,9 +17,16 @@
     <string name="pref_title_frame_length">Frame length</string>
     <string name="pref_frame_length_key">frame_length</string>
 
+    <!-- File Writer settings -->
+    <string name="pref_header_file_writer">File Writer</string>
+
+    <string name="pref_title_file_prefix">Audio file prefix</string>
+    <string name="pref_file_prefix_key">file_prefix</string>
+    <string name="pref_default_file_prefix">AudioCollector</string>
+
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>
-    <string name="pref_header_audio_collector">Audio Collector</string>
+
     <string name="pref_title_social_recommendations">Enable social recommendations</string>
     <string name="pref_description_social_recommendations">Recommendations for people to contact
         based on your message history
