@@ -5,9 +5,11 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Binder;
 import android.os.Environment;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.io.File;
@@ -76,9 +78,17 @@ public class FileWriterService extends Service implements AudioCollectorListener
         Log.i(TAG, "Received audio frame of " + audioData.length + " samples with timestamp: " + (new Date(timestamp)).toString());
         String audioDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).getAbsolutePath() + "/AIM";
         new File(audioDirectory).mkdirs();
-        String audioFilename = "AudioCollector_" + String.valueOf(timestamp) + ".wav";
+        String audioFilename = stringPreferenceValue(R.string.pref_file_prefix_key) + "_" + String.valueOf(timestamp) + ".wav";
         Log.d(TAG,"Destination directory for audio files: " + audioDirectory);
         AudioUtils.writeWavFile(audioDirectory + "/" + audioFilename, audioData);
+    }
+
+    private String stringPreferenceValue(int key) {
+        return sharedPreferences().getString(getString(key), "");
+    }
+
+    private SharedPreferences sharedPreferences() {
+        return PreferenceManager.getDefaultSharedPreferences(this);
     }
 
     class FileWriterBinder extends Binder {
