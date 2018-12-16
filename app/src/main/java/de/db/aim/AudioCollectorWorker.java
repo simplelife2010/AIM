@@ -19,7 +19,6 @@ public class AudioCollectorWorker implements Runnable {
     private int mBufferSizeInBytes;
     private int mChunkSizeInMilliseconds;
     private int mFrameLengthInMilliseconds;
-    private boolean mDoStop = false;
 
     AudioCollectorWorker(AudioCollectorService service,
                          int bufferSizeInMilliseconds,
@@ -29,15 +28,6 @@ public class AudioCollectorWorker implements Runnable {
         this.mChunkSizeInMilliseconds = chunkSizeInMilliseconds;
         this.mFrameLengthInMilliseconds = frameLengthInMilliseconds;
         this.mBufferSizeInBytes = bufferSizeInMilliseconds * mSampleRate * 2 / 1000;
-    }
-
-    synchronized void doStop() {
-        Log.d(TAG,"Received doStop");
-        this.mDoStop = true;
-    }
-
-    private synchronized boolean keepRunning() {
-        return !this.mDoStop;
     }
 
     @Override
@@ -52,7 +42,7 @@ public class AudioCollectorWorker implements Runnable {
         //Empty buffer before reading timestamp
         mRecorder.read(mAudioData, 0, mBufferSizeInBytes);
         mTimestamp = System.currentTimeMillis();
-        while(keepRunning()) {
+        while(!Thread.currentThread().isInterrupted()) {
             capture(samplesPerFrame, chunkSizeInSamples);
         }
         mRecorder.stop();

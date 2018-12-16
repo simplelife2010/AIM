@@ -10,6 +10,9 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class AudioCollectorService extends Service {
 
@@ -18,8 +21,7 @@ public class AudioCollectorService extends Service {
     private final IBinder mBinder = new AudioCollectorBinder();
 
     private List<AudioCollectorListener> mListeners = new ArrayList<AudioCollectorListener>();
-    private AudioCollectorWorker mWorker;
-    private Thread mHandle;
+    private ExecutorService mExecutor;
 
     private SharedPreferences.OnSharedPreferenceChangeListener mPreferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
 
@@ -82,33 +84,35 @@ public class AudioCollectorService extends Service {
     }
 
     private void setupService() {
+        Log.d(TAG,"Stopping worker if exists...");
         stopCapture();
+        Log.d(TAG,"Stopping worker if exists...Done.");
         int bufferSizeInMilliseconds = integerPreferenceValue(R.string.pref_buffer_size_key);
         int chunkSizeInMilliseconds = integerPreferenceValue(R.string.pref_chunk_size_key);
         int frameLengthInMilliseconds = integerPreferenceValue(R.string.pref_frame_length_key);
         Log.i(TAG, "Starting to capture audio");
-        Log.d(TAG, "Setting up worker...");
-        mWorker = new AudioCollectorWorker(this,
+        mExecutor = Executors.newSingleThreadExecutor();
+        Log.d(TAG,"Executing worker");
+        mExecutor.execute(new AudioCollectorWorker(this,
                 bufferSizeInMilliseconds,
                 chunkSizeInMilliseconds,
-                frameLengthInMilliseconds);
-        mHandle = new Thread(mWorker);
-        mHandle.setName("AudioCollectorWorker");
-        mHandle.start();
-        Log.d(TAG,"Setting up worker...Done");
+                frameLengthInMilliseconds));
     }
 
     private void stopCapture() {
-        if (mWorker != null) {
-            Log.d(TAG, "Calling worker.doStop()");
-            mWorker.doStop();
+        if (mExecutor != null) {
+            Log.d(TAG, "Shutting down Executor");
+            mExecutor.shutdownNow();
             Log.d(TAG,"Waiting for worker to finish...");
             try {
-                mHandle.join();
+                if (mExecutor.awaitTermination(60, TimeUnit.SECONDS)) {
+                    Log.d(TAG, "Waiting for worker to finish...Done");
+                } else {
+                    throw new RuntimeException("Could not shutdown worker.");
+                }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Log.d(TAG, "Waiting for worker to finish...Done");
             }
-            Log.d(TAG,"Waiting for worker to finish...Done");
         }
     }
 
