@@ -13,7 +13,9 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class FileWriterService extends Service implements AudioCollectorListener {
 
@@ -75,11 +77,14 @@ public class FileWriterService extends Service implements AudioCollectorListener
 
     @Override
     public void onNewAudioFrame(long timestamp, short[] audioData) {
-        Log.i(TAG, "Received audio frame of " + audioData.length + " samples with timestamp: " + (new Date(timestamp)).toString());
+        Log.i(TAG, "Received audio frame of " + audioData.length + " samples");
         String audioDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).getAbsolutePath() + "/AIM";
         new File(audioDirectory).mkdirs();
-        String audioFilename = stringPreferenceValue(R.string.pref_file_prefix_key) + "_" + String.valueOf(timestamp) + ".wav";
-        Log.d(TAG,"Destination directory for audio files: " + audioDirectory);
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'Z'HH-mm-ss'.'SSS");
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String formattedTimestamp = format.format(timestamp);
+        String audioFilename = stringPreferenceValue(R.string.pref_file_prefix_key) + "_" + formattedTimestamp + ".wav";
+        Log.d(TAG,"Writing audio file: " + audioDirectory + "/" + audioFilename);
         AudioUtils.writeWavFile(audioDirectory + "/" + audioFilename, audioData);
     }
 
