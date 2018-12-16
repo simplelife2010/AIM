@@ -14,8 +14,12 @@ import android.util.Log;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class FileWriterService extends Service implements AudioCollectorListener {
 
@@ -78,14 +82,22 @@ public class FileWriterService extends Service implements AudioCollectorListener
     @Override
     public void onNewAudioFrame(long timestamp, short[] audioData) {
         Log.i(TAG, "Received audio frame of " + audioData.length + " samples");
-        String audioDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).getAbsolutePath() + "/AIM";
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String date = format.format(timestamp);
+        format = new SimpleDateFormat("HH");
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String hour = format.format(timestamp);
+        String audioDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).getAbsolutePath() + "/AIM/" + date + "/" + hour;
         new File(audioDirectory).mkdirs();
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'Z'HH-mm-ss'.'SSS");
+        format = new SimpleDateFormat("yyyy-MM-dd'Z'HH-mm-ss'.'SSS");
         format.setTimeZone(TimeZone.getTimeZone("UTC"));
         String formattedTimestamp = format.format(timestamp);
         String audioFilename = stringPreferenceValue(R.string.pref_file_prefix_key) + "_" + formattedTimestamp + ".wav";
-        Log.d(TAG,"Writing audio file: " + audioDirectory + "/" + audioFilename);
-        AudioUtils.writeWavFile(audioDirectory + "/" + audioFilename, audioData);
+        Log.d(TAG,"Submitting file output via Executor...");
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(1, 1, 1L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+        executor.execute(new FileWriterWorker(audioDirectory + "/" + audioFilename, Arrays.copyOf(audioData, audioData.length)));
+        Log.d(TAG,"Submitting file output via Executor...Done.");
     }
 
     private String stringPreferenceValue(int key) {
@@ -100,6 +112,26 @@ public class FileWriterService extends Service implements AudioCollectorListener
         FileWriterService getService() {
             // Return this instance of LocalService so clients can call public methods
             return FileWriterService.this;
+        }
+    }
+
+    private class FileWriterWorker implements Runnable {
+
+        private static final String TAG = "FileWriterWorker";
+
+        private String mPathName;
+        private short[] mAudioData;
+
+        public FileWriterWorker(String pathName, short[] audioData) {
+            this.mPathName = pathName;
+            this.mAudioData = audioData;
+        }
+
+        @Override
+        public void run() {
+            Log.d(TAG, "Writing " + mPathName + " asynchonously...");
+            AudioUtils.writeWavFile(mPathName, mAudioData);
+            Log.d(TAG, "Writing " + mPathName + " asynchonously...Done");
         }
     }
 }
