@@ -1,6 +1,6 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <ListPreference
-        android:defaultValue="@integer/pref_buffer_size_default_value"
+        android:defaultValue="@string/pref_buffer_size_default_value"
         android:entries="@array/pref_buffer_size_titles"
         android:entryValues="@array/pref_buffer_size_values"
         android:key="@string/pref_buffer_size_key"
@@ -8,7 +8,7 @@
         android:positiveButtonText="@null"
         android:title="@string/pref_title_buffer_size" />
     <ListPreference
-        android:defaultValue="@integer/pref_chunk_size_default_value"
+        android:defaultValue="@string/pref_chunk_size_default_value"
         android:entries="@array/pref_chunk_size_titles"
         android:entryValues="@array/pref_chunk_size_values"
         android:key="@string/pref_chunk_size_key"
@@ -16,7 +16,7 @@
         android:positiveButtonText="@null"
         android:title="@string/pref_title_chunk_size" />
     <ListPreference
-        android:defaultValue="@integer/pref_frame_length_default_value"
+        android:defaultValue="@string/pref_frame_length_default_value"
         android:entries="@array/pref_frame_length_titles"
         android:entryValues="@array/pref_frame_length_values"
         android:key="@string/pref_frame_length_key"

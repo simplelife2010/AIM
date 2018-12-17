@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <integer name="pref_buffer_size_default_value">2000</integer>
-    <integer name="pref_chunk_size_default_value">1000</integer>
-    <integer name="pref_frame_length_default_value">5000</integer>
-</resources>

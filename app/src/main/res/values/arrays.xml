@@ -68,4 +68,42 @@
         <item>10000</item>
     </string-array>
 
+    <string-array name="pref_remove_period_titles">
+        <item>Every minute</item>
+        <item>Every 5 minutes</item>
+        <item>Every 15 minutes</item>
+        <item>Every 60 minutes</item>
+    </string-array>
+    <string-array name="pref_remove_period_values">
+        <item>1</item>
+        <item>5</item>
+        <item>15</item>
+        <item>60</item>
+    </string-array>
+
+    <string-array name="pref_keep_files_titles">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>5</item>
+        <item>10</item>
+        <item>20</item>
+        <item>50</item>
+        <item>100</item>
+        <item>200</item>
+        <item>500</item>
+    </string-array>
+    <string-array name="pref_keep_files_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>5</item>
+        <item>10</item>
+        <item>20</item>
+        <item>50</item>
+        <item>100</item>
+        <item>200</item>
+        <item>500</item>
+    </string-array>
+
 </resources>

@@ -192,6 +192,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // updated to reflect the new value, per the Android Design
             // guidelines.
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_file_prefix_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_remove_period_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_keep_files_key)));
         }
 
         @Override
