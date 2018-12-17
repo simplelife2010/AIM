@@ -150,7 +150,6 @@ public class FileWriterService extends Service implements AudioCollectorListener
             }
         }
         mScheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-        SharedPreferences sp = sharedPreferences();
         mScheduledExecutor.scheduleAtFixedRate(new FileRemoverWorker(integerPreferenceValue(R.string.pref_keep_files_key)),
                 integerPreferenceValue(R.string.pref_remove_period_key),
                 integerPreferenceValue(R.string.pref_remove_period_key),

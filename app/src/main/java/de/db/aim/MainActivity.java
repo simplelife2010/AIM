@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -43,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+
         PreferenceManager.setDefaultValues(this, R.xml.pref_audio_collector, false);
         PreferenceManager.setDefaultValues(this, R.xml.pref_file_writer, false);
 
@@ -58,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
         Intent intent = new Intent(this, FileWriterService.class);
         Log.d(TAG,"Binding FileWriterService");
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
