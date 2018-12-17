@@ -13,9 +13,15 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -195,6 +201,7 @@ public class FileWriterService extends Service implements AudioCollectorListener
         private static final String TAG = "FileRemoverWorker";
 
         private int mNumberOfFilesToKeep;
+        private List<File> mFiles;
 
         public FileRemoverWorker(int numberOfFileToKeep) {
             this.mNumberOfFilesToKeep = numberOfFileToKeep;
@@ -203,7 +210,58 @@ public class FileWriterService extends Service implements AudioCollectorListener
         @Override
         public void run() {
             Log.d(TAG,"Removing old audio files (keeping " + String.valueOf(mNumberOfFilesToKeep) + " files)...");
+            File baseDirectory = new File(
+                    Environment.getExternalStoragePublicDirectory(
+                            Environment.DIRECTORY_MUSIC).getAbsolutePath() + "/AIM");
+            mFiles = new ArrayList<File>();
+            walk(baseDirectory);
+            Collections.sort(mFiles, new Comparator<File>() {
+                @Override
+                public int compare(File f1, File f2) {
+                    return Long.valueOf(f1.lastModified()).compareTo(f2.lastModified());
+                }
+            });
+            mFiles.subList(mFiles.size() - mNumberOfFilesToKeep, mFiles.size()).clear();
+            for (File file : mFiles) {
+                Log.d(TAG, "Deleting " + file.getName());
+                file.delete();
+            }
+
+            Log.d(TAG, "Deleting empty directories...");
+            walkAndDeleteEmptyDirs(baseDirectory);
+            Log.d(TAG, "Deleting empty directories...Done");
+
             Log.d(TAG,"Removing old audio files...Done");
+        }
+
+        private void walk(File directory) {
+
+            File[] files = directory.listFiles();
+            if (files == null) return;
+
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    walk(file);
+                }
+                else {
+                    mFiles.add(file);
+                }
+            }
+        }
+
+        private void walkAndDeleteEmptyDirs(File directory) {
+
+            File[] files = directory.listFiles();
+
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    walkAndDeleteEmptyDirs(file);
+                }
+            }
+            if (directory.listFiles().length == 0) {
+                Log.d(TAG, "Deleting directory " + directory.getName());
+                directory.delete();
+            }
         }
     }
 }
