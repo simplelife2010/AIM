@@ -45,4 +45,8 @@
     <string name="pref_format_type_key">format_type</string>
     <string name="pref_format_type_default_value">audio/mp4a-latm</string>
 
+    <string name="pref_title_bit_rate">Bit rate</string>
+    <string name="pref_bit_rate_key">bit_rate</string>
+    <string name="pref_bit_rate_default_value">1000000</string>
+
 </resources>

@@ -115,4 +115,35 @@
         <item>audio/flac</item>
     </string-array>
 
+    <string-array name="pref_bit_rate_titles">
+        <item>1 kbit/s</item>
+        <item>2 kbit/s</item>
+        <item>5 kbit/s</item>
+        <item>10 kbit/s</item>
+        <item>20 kbit/s</item>
+        <item>50 kbit/s</item>
+        <item>100 kbit/s</item>
+        <item>200 kbit/s</item>
+        <item>500 kbit/s</item>
+        <item>1 Mbit/s</item>
+        <item>2 Mbit/s</item>
+        <item>5 Mbit/s</item>
+        <item>10 Mbit/s</item>
+    </string-array>
+    <string-array name="pref_bit_rate_values">
+        <item>1000</item>
+        <item>2000</item>
+        <item>5000</item>
+        <item>10000</item>
+        <item>20000</item>
+        <item>50000</item>
+        <item>100000</item>
+        <item>200000</item>
+        <item>500000</item>
+        <item>1000000</item>
+        <item>2000000</item>
+        <item>5000000</item>
+        <item>10000000</item>
+    </string-array>
+
 </resources>

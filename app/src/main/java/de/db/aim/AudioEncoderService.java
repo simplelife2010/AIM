@@ -54,7 +54,8 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
         @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-            if (getString(R.string.pref_format_type_key).equals(key)) {
+            if (getString(R.string.pref_format_type_key).equals(key)
+                    || getString(R.string.pref_bit_rate_key).equals(key)) {
                 Log.i(TAG, "A preference has been changed: " + key);
                 setupService();
             }
@@ -102,15 +103,15 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
             mCodec.release();
         }
         MediaCodecList codecList = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
-        MediaCodecInfo[] codecInfos = codecList.getCodecInfos();
+        //MediaCodecInfo[] codecInfos = codecList.getCodecInfos();
         /*for (MediaCodecInfo codecInfo : codecInfos) {
             Log.d(TAG, "Codec: " + codecInfo.getName());
             for (String type : codecInfo.getSupportedTypes()) {
                 Log.d(TAG, "--- " + type);
             }
         }*/
-        SharedPreferences sp = sharedPreferences();
         MediaFormat format = MediaFormat.createAudioFormat(stringPreferenceValue(R.string.pref_format_type_key), 44100, 1);
+        format.setInteger(MediaFormat.KEY_BIT_RATE, integerPreferenceValue(R.string.pref_bit_rate_key));
         String codecName = codecList.findEncoderForFormat(format);
         if (codecName == null) {
             throw new RuntimeException("No matching codec found");
@@ -137,6 +138,10 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
 
     private String stringPreferenceValue(int key) {
         return sharedPreferences().getString(getString(key), "");
+    }
+
+    private int integerPreferenceValue(int key) {
+        return Integer.parseInt(sharedPreferences().getString(getString(key), ""));
     }
 
     private SharedPreferences sharedPreferences() {
