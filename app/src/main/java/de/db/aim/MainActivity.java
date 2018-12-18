@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
         PreferenceManager.setDefaultValues(this, R.xml.pref_audio_collector, false);
         PreferenceManager.setDefaultValues(this, R.xml.pref_file_writer, false);
         PreferenceManager.setDefaultValues(this, R.xml.pref_file_remover, false);
+        PreferenceManager.setDefaultValues(this, R.xml.pref_audio_encoder, false);
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);

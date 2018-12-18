@@ -106,4 +106,13 @@
         <item>500</item>
     </string-array>
 
+    <string-array name="pref_format_type_titles">
+        <item>MPEG-4 Audio LATM</item>
+        <item>FLAC</item>
+    </string-array>
+    <string-array name="pref_format_type_values">
+        <item>audio/mp4a-latm</item>
+        <item>audio/flac</item>
+    </string-array>
+
 </resources>

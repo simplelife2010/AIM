@@ -38,4 +38,11 @@
     <string name="pref_keep_files_key">keep_files</string>
     <string name="pref_keep_files_default_value">10</string>
 
+    <!-- Audio Encoder settings -->
+    <string name="pref_header_audio_encoder">Audio Encoder</string>
+
+    <string name="pref_title_format_type">Format type</string>
+    <string name="pref_format_type_key">format_type</string>
+    <string name="pref_format_type_default_value">audio/mp4a-latm</string>
+
 </resources>

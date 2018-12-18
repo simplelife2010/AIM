@@ -141,7 +141,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         return PreferenceFragment.class.getName().equals(fragmentName)
                 || AudioCollectorPreferenceFragment.class.getName().equals(fragmentName)
                 || FileWriterPreferenceFragment.class.getName().equals(fragmentName)
-                || FileRemoverPreferenceFragment.class.getName().equals(fragmentName);
+                || FileRemoverPreferenceFragment.class.getName().equals(fragmentName)
+                || AudioEncoderPreferenceFragment.class.getName().equals(fragmentName);
     }
 
     /**
@@ -224,6 +225,36 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // guidelines.
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_remove_period_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_keep_files_key)));
+        }
+
+        @Override
+        public boolean onOptionsItemSelected(MenuItem item) {
+            int id = item.getItemId();
+            if (id == android.R.id.home) {
+                startActivity(new Intent(getActivity(), SettingsActivity.class));
+                return true;
+            }
+            return super.onOptionsItemSelected(item);
+        }
+    }
+
+    /**
+     * This fragment shows Audio Encoder preferences only. It is used when the
+     * activity is showing a two-pane settings UI.
+     */
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    public static class AudioEncoderPreferenceFragment extends PreferenceFragment {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.pref_audio_encoder);
+            setHasOptionsMenu(true);
+
+            // Bind the summaries of EditText/List/Dialog/Ringtone preferences
+            // to their values. When their values change, their summaries are
+            // updated to reflect the new value, per the Android Design
+            // guidelines.
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_format_type_key)));
         }
 
         @Override

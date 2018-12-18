@@ -35,13 +35,13 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class FileWriterService extends Service implements AudioCollectorListener {
+public class FileWriterService extends Service implements AudioEncoderListener {
 
     private static final String TAG = FileWriterService.class.getSimpleName();
     private static final int FILE_REMOVER_JOB_ID = 1;
 
     private final IBinder mBinder = new FileWriterService.FileWriterBinder();
-    AudioCollectorService mService;
+    AudioEncoderService mService;
     boolean mBound = false;
     private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -49,10 +49,10 @@ public class FileWriterService extends Service implements AudioCollectorListener
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
-            AudioCollectorService.AudioCollectorBinder binder = (AudioCollectorService.AudioCollectorBinder) service;
+            AudioEncoderService.AudioEncoderBinder binder = (AudioEncoderService.AudioEncoderBinder) service;
             mService = binder.getService();
             mBound = true;
-            mService.registerAudioCollectorListener(FileWriterService.this);
+            mService.registerAudioEncoderListener(FileWriterService.this);
         }
 
         @Override
@@ -80,8 +80,8 @@ public class FileWriterService extends Service implements AudioCollectorListener
     public void onCreate() {
         super.onCreate();
         sharedPreferences().registerOnSharedPreferenceChangeListener(mPreferenceChangeListener);
-        Intent intent = new Intent(this, AudioCollectorService.class);
-        Log.d(TAG,"Binding AudioCollectorService");
+        Intent intent = new Intent(this, AudioEncoderService.class);
+        Log.d(TAG,"Binding AudioEncoderService");
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         scheduleFileRemoverJob();
     }
@@ -89,7 +89,7 @@ public class FileWriterService extends Service implements AudioCollectorListener
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mService.unregisterAudioCollectorListener(this);
+        mService.unregisterAudioEncoderListener(this);
         Log.d(TAG, "Unbinding AudioCollectorService");
         unbindService(mConnection);
         cancelFileRemoverJob();
@@ -114,6 +114,11 @@ public class FileWriterService extends Service implements AudioCollectorListener
     }
 
     @Override
+    public void onNewEncodedAudioFrame(long timestamp, byte[] encodedAudioData) {
+
+    }
+
+
     public void onNewAudioFrame(long timestamp, short[] audioData) {
         Log.i(TAG, "Received audio frame of " + audioData.length + " samples");
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
