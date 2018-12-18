@@ -10,4 +10,8 @@
         android:fragment="de.db.aim.SettingsActivity$FileWriterPreferenceFragment"
         android:icon="@drawable/ic_folder_black_24dp"
         android:title="@string/pref_header_file_writer" />
+    <header
+        android:fragment="de.db.aim.SettingsActivity$FileRemoverPreferenceFragment"
+        android:icon="@drawable/ic_delete_black_24dp"
+        android:title="@string/pref_header_file_remover" />
 </preference-headers>

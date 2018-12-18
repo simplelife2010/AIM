@@ -1,0 +1,18 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <ListPreference
+        android:defaultValue="@string/pref_remove_period_default_value"
+        android:entries="@array/pref_remove_period_titles"
+        android:entryValues="@array/pref_remove_period_values"
+        android:key="@string/pref_remove_period_key"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null"
+        android:title="@string/pref_title_remove_period" />
+    <ListPreference
+        android:defaultValue="@string/pref_keep_files_default_value"
+        android:entries="@array/pref_keep_files_titles"
+        android:entryValues="@array/pref_keep_files_values"
+        android:key="@string/pref_keep_files_key"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null"
+        android:title="@string/pref_title_keep_files" />
+</PreferenceScreen>
