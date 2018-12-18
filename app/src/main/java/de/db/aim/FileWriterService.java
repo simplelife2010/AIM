@@ -1,11 +1,13 @@
 package de.db.aim;
 
 import android.app.Service;
+import android.content.AsyncQueryHandler;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Environment;
 import android.os.IBinder;
@@ -128,12 +130,9 @@ public class FileWriterService extends Service implements AudioCollectorListener
         format = new SimpleDateFormat("yyyy-MM-dd'Z'HH-mm-ss'.'SSS");
         format.setTimeZone(TimeZone.getTimeZone("UTC"));
         String formattedTimestamp = format.format(timestamp);
-        SharedPreferences sp = sharedPreferences();
         String audioFilename = stringPreferenceValue(R.string.pref_file_prefix_key) + "_" + formattedTimestamp + ".wav";
-        Log.d(TAG,"Submitting file output via Executor...");
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(1, 1, 1L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
-        executor.execute(new FileWriterWorker(audioDirectory + "/" + audioFilename, Arrays.copyOf(audioData, audioData.length)));
-        Log.d(TAG,"Submitting file output via Executor...Done.");
+        String audioPathName = audioDirectory + "/" + audioFilename;
+        new FileWriterTask().execute(new FileWriterTaskParams(audioPathName, audioData));
     }
 
     private void setupScheduledWorker() {
@@ -175,23 +174,32 @@ public class FileWriterService extends Service implements AudioCollectorListener
         }
     }
 
-    private class FileWriterWorker implements Runnable {
+    private class FileWriterTaskParams {
+        String pathName;
+        short[] audioData;
 
-        private static final String TAG = "FileWriterWorker";
+        FileWriterTaskParams(String pathName, short[] audioData) {
+            this.pathName = pathName;
+            this.audioData = audioData;
+        }
+    }
 
-        private String mPathName;
-        private short[] mAudioData;
+    private static class FileWriterTask extends AsyncTask<FileWriterTaskParams, Void, Void> {
 
-        public FileWriterWorker(String pathName, short[] audioData) {
-            this.mPathName = pathName;
-            this.mAudioData = audioData;
+        private static final String TAG = "FileWriterTask";
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            Log.d(TAG, "FileWriterTask finished");
         }
 
         @Override
-        public void run() {
-            Log.d(TAG, "Writing " + mPathName + " asynchonously...");
-            AudioUtils.writeWavFile(mPathName, mAudioData);
-            Log.d(TAG, "Writing " + mPathName + " asynchonously...Done");
+        protected Void doInBackground(FileWriterTaskParams... fileWriterTaskParams) {
+            Log.d(TAG, "Writing " + fileWriterTaskParams[0].pathName + " asynchonously...");
+            AudioUtils.writeWavFile(fileWriterTaskParams[0].pathName, fileWriterTaskParams[0].audioData);
+            Log.d(TAG, "Writing " + fileWriterTaskParams[0].pathName + " asynchonously...Done");
+            return null;
         }
     }
 
@@ -202,7 +210,7 @@ public class FileWriterService extends Service implements AudioCollectorListener
         private int mNumberOfFilesToKeep;
         private List<File> mFiles;
 
-        public FileRemoverWorker(int numberOfFileToKeep) {
+        FileRemoverWorker(int numberOfFileToKeep) {
             this.mNumberOfFilesToKeep = numberOfFileToKeep;
         }
 
