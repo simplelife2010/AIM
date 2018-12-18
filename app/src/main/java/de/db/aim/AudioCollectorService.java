@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 public class AudioCollectorService extends Service {
 
-    private static final String TAG = "AudioCollectorService";
+    private static final String TAG = AudioCollectorService.class.getSimpleName();
 
     private final IBinder mBinder = new AudioCollectorBinder();
 

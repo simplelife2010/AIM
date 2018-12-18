@@ -8,7 +8,7 @@ import android.os.Process;
 
 public class AudioCollectorWorker implements Runnable {
 
-    private static final String TAG = "AudioCollectorWorker";
+    private static final String TAG = AudioCollectorWorker.class.getSimpleName();
 
     private AudioCollectorService mService;
     private AudioRecord mRecorder;

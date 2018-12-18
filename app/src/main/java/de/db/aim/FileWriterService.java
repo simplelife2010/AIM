@@ -1,6 +1,8 @@
 package de.db.aim;
 
 import android.app.Service;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
 import android.content.AsyncQueryHandler;
 import android.content.ComponentName;
 import android.content.Context;
@@ -9,9 +11,11 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import java.io.File;
@@ -33,12 +37,12 @@ import java.util.concurrent.TimeUnit;
 
 public class FileWriterService extends Service implements AudioCollectorListener {
 
-    private static final String TAG = "FileWriterService";
+    private static final String TAG = FileWriterService.class.getSimpleName();
+    private static final int FILE_REMOVER_JOB_ID = 1;
 
     private final IBinder mBinder = new FileWriterService.FileWriterBinder();
     AudioCollectorService mService;
     boolean mBound = false;
-    ScheduledExecutorService mScheduledExecutor;
     private ServiceConnection mConnection = new ServiceConnection() {
 
         @Override
@@ -59,13 +63,15 @@ public class FileWriterService extends Service implements AudioCollectorListener
 
     private SharedPreferences.OnSharedPreferenceChangeListener mPreferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
 
+        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
             if (getString(R.string.pref_remove_period_key).equals(key) ||
                     getString(R.string.pref_file_prefix_key).equals(key) ||
                     getString(R.string.pref_keep_files_key).equals(key)) {
                 Log.i(TAG, "A preference has been changed: " + key);
-                FileWriterService.this.setupScheduledWorker();
+                cancelFileRemoverJob();
+                scheduleFileRemoverJob();
             }
         }
     };
@@ -77,7 +83,7 @@ public class FileWriterService extends Service implements AudioCollectorListener
         Intent intent = new Intent(this, AudioCollectorService.class);
         Log.d(TAG,"Binding AudioCollectorService");
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-        setupScheduledWorker();
+        scheduleFileRemoverJob();
     }
 
     @Override
@@ -86,16 +92,7 @@ public class FileWriterService extends Service implements AudioCollectorListener
         mService.unregisterAudioCollectorListener(this);
         Log.d(TAG, "Unbinding AudioCollectorService");
         unbindService(mConnection);
-        Log.d(TAG,"Shutting down scheduled worker for file removal");
-        mScheduledExecutor.shutdown();
-        try {
-            Log.d(TAG,"Waiting for Executor to terminate...");
-            mScheduledExecutor.awaitTermination(1L,TimeUnit.MINUTES);
-            Log.d(TAG,"Waiting for Executor to terminate...Done");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            Log.d(TAG,"Waiting for Executor to terminate...Done");
-        }
+        cancelFileRemoverJob();
         sharedPreferences().unregisterOnSharedPreferenceChangeListener(mPreferenceChangeListener);
     }
 
@@ -135,26 +132,6 @@ public class FileWriterService extends Service implements AudioCollectorListener
         new FileWriterTask().execute(new FileWriterTaskParams(audioPathName, audioData));
     }
 
-    private void setupScheduledWorker() {
-        Log.d(TAG,"Setting up scheduled worker for file removal");
-        if (mScheduledExecutor != null) {
-            mScheduledExecutor.shutdown();
-            try {
-                Log.d(TAG,"Waiting for Executor to terminate...");
-                mScheduledExecutor.awaitTermination(1L,TimeUnit.MINUTES);
-                Log.d(TAG,"Waiting for Executor to terminate...Done");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                Log.d(TAG,"Waiting for Executor to terminate...Done");
-            }
-        }
-        mScheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-        mScheduledExecutor.scheduleAtFixedRate(new FileRemoverWorker(integerPreferenceValue(R.string.pref_keep_files_key)),
-                integerPreferenceValue(R.string.pref_remove_period_key),
-                integerPreferenceValue(R.string.pref_remove_period_key),
-                TimeUnit.MINUTES);
-    }
-
     private String stringPreferenceValue(int key) {
         return sharedPreferences().getString(getString(key), "");
     }
@@ -174,6 +151,25 @@ public class FileWriterService extends Service implements AudioCollectorListener
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void scheduleFileRemoverJob() {
+        int removePeriod = integerPreferenceValue(R.string.pref_remove_period_key);
+        Log.d(TAG, "Scheduling file remover job to run every " + String.valueOf(removePeriod) + " minutes");
+        JobScheduler jobScheduler =
+                (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler.schedule(new JobInfo.Builder(FILE_REMOVER_JOB_ID,
+                new ComponentName(this, FileRemoverJobService.class))
+                .setPeriodic(60 * 1000 * removePeriod)
+                .build());
+    }
+
+    private void cancelFileRemoverJob() {
+        Log.d(TAG, "Cancelling file remover job");
+        JobScheduler jobScheduler =
+                (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler.cancel(FILE_REMOVER_JOB_ID);
+    }
+
     private class FileWriterTaskParams {
         String pathName;
         short[] audioData;
@@ -186,7 +182,7 @@ public class FileWriterService extends Service implements AudioCollectorListener
 
     private static class FileWriterTask extends AsyncTask<FileWriterTaskParams, Void, Void> {
 
-        private static final String TAG = "FileWriterTask";
+        private static final String TAG = FileWriterTask.class.getSimpleName();
 
         @Override
         protected void onPostExecute(Void aVoid) {
@@ -200,75 +196,6 @@ public class FileWriterService extends Service implements AudioCollectorListener
             AudioUtils.writeWavFile(fileWriterTaskParams[0].pathName, fileWriterTaskParams[0].audioData);
             Log.d(TAG, "Writing " + fileWriterTaskParams[0].pathName + " asynchonously...Done");
             return null;
-        }
-    }
-
-    private class FileRemoverWorker implements Runnable {
-
-        private static final String TAG = "FileRemoverWorker";
-
-        private int mNumberOfFilesToKeep;
-        private List<File> mFiles;
-
-        FileRemoverWorker(int numberOfFileToKeep) {
-            this.mNumberOfFilesToKeep = numberOfFileToKeep;
-        }
-
-        @Override
-        public void run() {
-            Log.d(TAG,"Removing old audio files (keeping " + String.valueOf(mNumberOfFilesToKeep) + " files)...");
-            File baseDirectory = new File(
-                    Environment.getExternalStoragePublicDirectory(
-                            Environment.DIRECTORY_MUSIC).getAbsolutePath() + "/AIM");
-            mFiles = new ArrayList<File>();
-            walk(baseDirectory);
-            Collections.sort(mFiles, new Comparator<File>() {
-                @Override
-                public int compare(File f1, File f2) {
-                    return Long.valueOf(f1.lastModified()).compareTo(f2.lastModified());
-                }
-            });
-            mFiles.subList(mFiles.size() - mNumberOfFilesToKeep, mFiles.size()).clear();
-            for (File file : mFiles) {
-                Log.d(TAG, "Deleting " + file.getName());
-                file.delete();
-            }
-
-            Log.d(TAG, "Deleting empty directories...");
-            walkAndDeleteEmptyDirs(baseDirectory);
-            Log.d(TAG, "Deleting empty directories...Done");
-
-            Log.d(TAG,"Removing old audio files...Done");
-        }
-
-        private void walk(File directory) {
-
-            File[] files = directory.listFiles();
-            if (files == null) return;
-
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    walk(file);
-                }
-                else {
-                    mFiles.add(file);
-                }
-            }
-        }
-
-        private void walkAndDeleteEmptyDirs(File directory) {
-
-            File[] files = directory.listFiles();
-
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    walkAndDeleteEmptyDirs(file);
-                }
-            }
-            if (directory.listFiles().length == 0) {
-                Log.d(TAG, "Deleting directory " + directory.getName());
-                directory.delete();
-            }
         }
     }
 }
