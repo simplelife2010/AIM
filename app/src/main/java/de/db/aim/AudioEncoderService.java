@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.media.MediaCodec;
-import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.os.Binder;
@@ -18,6 +17,8 @@ import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +28,9 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
 
     private AudioEncoderBinder mBinder = new AudioEncoderBinder();
     private MediaCodec mCodec;
-    AudioCollectorService mService;
+    private ByteBuffer mCaptureBuffer;
+    private long mTimestamp;
+    private AudioCollectorService mService;
     private List<AudioEncoderListener> mListeners = new ArrayList<AudioEncoderListener>();
     boolean mBound = false;
     private ServiceConnection mConnection = new ServiceConnection() {
@@ -40,11 +43,19 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
             mService = binder.getService();
             mBound = true;
             mService.registerAudioCollectorListener(AudioEncoderService.this);
+            setupService();
+            sharedPreferences().registerOnSharedPreferenceChangeListener(mPreferenceChangeListener);
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             mService.unregisterAudioCollectorListener(AudioEncoderService.this);
+            if (mCodec != null) {
+                mCodec.flush();
+                mCodec.stop();
+                mCodec.release();
+            }
+            sharedPreferences().unregisterOnSharedPreferenceChangeListener(mPreferenceChangeListener);
             mBound = false;
         }
     };
@@ -65,11 +76,9 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
     @Override
     public void onCreate() {
         super.onCreate();
-        setupService();
         Intent intent = new Intent(this, AudioCollectorService.class);
         Log.d(TAG,"Binding AudioCollectorService");
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-        sharedPreferences().registerOnSharedPreferenceChangeListener(mPreferenceChangeListener);
     }
 
     @Override
@@ -103,13 +112,6 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
             mCodec.release();
         }
         MediaCodecList codecList = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
-        //MediaCodecInfo[] codecInfos = codecList.getCodecInfos();
-        /*for (MediaCodecInfo codecInfo : codecInfos) {
-            Log.d(TAG, "Codec: " + codecInfo.getName());
-            for (String type : codecInfo.getSupportedTypes()) {
-                Log.d(TAG, "--- " + type);
-            }
-        }*/
         MediaFormat format = MediaFormat.createAudioFormat(stringPreferenceValue(R.string.pref_format_type_key), 44100, 1);
         format.setInteger(MediaFormat.KEY_BIT_RATE, integerPreferenceValue(R.string.pref_bit_rate_key));
         String codecName = codecList.findEncoderForFormat(format);
@@ -121,7 +123,9 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
             mCodec = MediaCodec.createByCodecName(codecName);
             mCodec.setCallback(new EncoderCallback());
             mCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            Log.d(TAG, "Codec configured");
             mCodec.start();
+            Log.d(TAG, "Codec started");
         } catch (IOException e) {
             throw new RuntimeException("Cannot create codec");
         }
@@ -129,11 +133,20 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
 
     @Override
     public void onNewAudioFrame(long timestamp, short[] audioData) {
-        Log.d(TAG, "New audio frame received");
-    }
-
-    public byte[] encode(short[] audioData) {
-        return null;
+        mTimestamp = timestamp;
+        Log.d(TAG, "New audio frame with " + String.valueOf(audioData.length) + " samples received");
+        if (mCaptureBuffer == null) {
+            mCaptureBuffer = ByteBuffer.allocate(2 * audioData.length);
+        } else if (mCaptureBuffer.capacity() != 2 * audioData.length) {
+            mCaptureBuffer = ByteBuffer.allocate(2 * audioData.length);
+        } else {
+            mCaptureBuffer.clear();
+        }
+        mCaptureBuffer.order(ByteOrder.nativeOrder());
+        mCaptureBuffer.asShortBuffer().put(audioData);
+        mCaptureBuffer.position(2 * audioData.length);
+        Log.d(TAG,"Capture buffer contains " + String.valueOf(mCaptureBuffer.position()) + " bytes");
+        mCaptureBuffer.flip();
     }
 
     private String stringPreferenceValue(int key) {
@@ -171,24 +184,55 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
 
     private class EncoderCallback extends MediaCodec.Callback {
 
+        private final String TAG = EncoderCallback.class.getSimpleName();
+
         @Override
         public void onInputBufferAvailable(MediaCodec mediaCodec, int i) {
+            //Log.d(TAG, "Input buffer " + String.valueOf(i) + " available");
 
+            try {
+                while (mCaptureBuffer == null) {
+                    Thread.sleep(100);
+                }
+                while (mCaptureBuffer.limit() - mCaptureBuffer.position() == 0) {
+                    Thread.sleep(100);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            ByteBuffer inputBuffer = mediaCodec.getInputBuffer(i);
+            int inputBufferAvailableBytes = inputBuffer.limit() - inputBuffer.position();
+            int captureBufferAvailableBytes = mCaptureBuffer.limit() - mCaptureBuffer.position();
+            byte[] subFrame = new byte[Math.min(inputBufferAvailableBytes, captureBufferAvailableBytes)];
+            mCaptureBuffer.get(subFrame);
+            inputBuffer.put(subFrame);
+            Log.d(TAG, "Put " + String.valueOf(subFrame.length) + "/" + String.valueOf(captureBufferAvailableBytes) + " bytes from capture buffer into input buffer");
+            int flags = 0;
+            if (captureBufferAvailableBytes == 0) {
+                flags = MediaCodec.BUFFER_FLAG_END_OF_STREAM;
+                Log.d(TAG, "Setting end of stream flag");
+            }
+            mediaCodec.queueInputBuffer(i, 0, subFrame.length, mTimestamp, flags);
+            mTimestamp += 1000 * subFrame.length / (2 * 44100);
         }
 
         @Override
         public void onOutputBufferAvailable(MediaCodec mediaCodec, int i, MediaCodec.BufferInfo bufferInfo) {
-
+            //Log.d(TAG, "Output buffer " + String.valueOf(i) + " available with " + String.valueOf(bufferInfo.size) + " bytes of available data");
+            ByteBuffer outputBuffer = mediaCodec.getOutputBuffer(i);
+            mediaCodec.releaseOutputBuffer(i, false);
+            //Log.d(TAG, "Output buffer released");
         }
 
         @Override
         public void onError(MediaCodec mediaCodec, MediaCodec.CodecException e) {
-
+            Log.d(TAG, "CodecException: " + e.toString());
         }
 
         @Override
         public void onOutputFormatChanged(MediaCodec mediaCodec, MediaFormat mediaFormat) {
-
+            Log.d(TAG, "Output format has been changed");
         }
     }
 }
