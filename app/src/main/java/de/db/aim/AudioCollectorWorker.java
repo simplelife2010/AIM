@@ -61,9 +61,7 @@ public class AudioCollectorWorker implements Runnable {
     }
 
     void capture(int samplesPerFrame, int chunkSizeInSamples) {
-        Log.d(TAG,"Current offset: " + mCurrentOffset);
         int samplesToFrameCompletion = samplesPerFrame - mCurrentOffset;
-        Log.d(TAG, "Samples to frame completion: " + samplesToFrameCompletion);
         int samplesToCapture;
         if (samplesToFrameCompletion < chunkSizeInSamples) {
             samplesToCapture = samplesToFrameCompletion;

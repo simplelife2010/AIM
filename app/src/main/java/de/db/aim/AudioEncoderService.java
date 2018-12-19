@@ -27,7 +27,10 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
     private static final String TAG = AudioEncoderService.class.getSimpleName();
 
     private AudioEncoderBinder mBinder = new AudioEncoderBinder();
+    private EncoderCallback mEncoderCallback = new EncoderCallback();
+    private MediaFormat mFormat;
     private MediaCodec mCodec;
+    private String mCodecName;
     private ByteBuffer mCaptureBuffer;
     private long mTimestamp;
     private AudioCollectorService mService;
@@ -107,28 +110,17 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
 
     private void setupService() {
         if (mCodec != null) {
-            mCodec.flush();
             mCodec.stop();
             mCodec.release();
         }
         MediaCodecList codecList = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
-        MediaFormat format = MediaFormat.createAudioFormat(stringPreferenceValue(R.string.pref_format_type_key), 44100, 1);
-        format.setInteger(MediaFormat.KEY_BIT_RATE, integerPreferenceValue(R.string.pref_bit_rate_key));
-        String codecName = codecList.findEncoderForFormat(format);
-        if (codecName == null) {
+        mFormat = MediaFormat.createAudioFormat(stringPreferenceValue(R.string.pref_format_type_key), 44100, 1);
+        mFormat.setInteger(MediaFormat.KEY_BIT_RATE, integerPreferenceValue(R.string.pref_bit_rate_key));
+        mCodecName = codecList.findEncoderForFormat(mFormat);
+        if (mCodecName == null) {
             throw new RuntimeException("No matching codec found");
         }
-        Log.d(TAG, "Found matching codec: " + codecName);
-        try {
-            mCodec = MediaCodec.createByCodecName(codecName);
-            mCodec.setCallback(new EncoderCallback());
-            mCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            Log.d(TAG, "Codec configured");
-            mCodec.start();
-            Log.d(TAG, "Codec started");
-        } catch (IOException e) {
-            throw new RuntimeException("Cannot create codec");
-        }
+        Log.d(TAG, "Found matching codec: " + mCodecName);
     }
 
     @Override
@@ -145,8 +137,16 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
         mCaptureBuffer.order(ByteOrder.nativeOrder());
         mCaptureBuffer.asShortBuffer().put(audioData);
         mCaptureBuffer.position(2 * audioData.length);
-        Log.d(TAG,"Capture buffer contains " + String.valueOf(mCaptureBuffer.position()) + " bytes");
         mCaptureBuffer.flip();
+        try {
+            mCodec = MediaCodec.createByCodecName(mCodecName);
+            mCodec.setCallback(mEncoderCallback);
+            mCodec.configure(mFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            Log.d(TAG, "Starting codec");
+            mCodec.start();
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot create codec");
+        }
     }
 
     private String stringPreferenceValue(int key) {
@@ -188,41 +188,35 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
 
         @Override
         public void onInputBufferAvailable(MediaCodec mediaCodec, int i) {
-            //Log.d(TAG, "Input buffer " + String.valueOf(i) + " available");
-
-            try {
-                while (mCaptureBuffer == null) {
-                    Thread.sleep(100);
-                }
-                while (mCaptureBuffer.limit() - mCaptureBuffer.position() == 0) {
-                    Thread.sleep(100);
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
             ByteBuffer inputBuffer = mediaCodec.getInputBuffer(i);
-            int inputBufferAvailableBytes = inputBuffer.limit() - inputBuffer.position();
-            int captureBufferAvailableBytes = mCaptureBuffer.limit() - mCaptureBuffer.position();
-            byte[] subFrame = new byte[Math.min(inputBufferAvailableBytes, captureBufferAvailableBytes)];
-            mCaptureBuffer.get(subFrame);
-            inputBuffer.put(subFrame);
-            Log.d(TAG, "Put " + String.valueOf(subFrame.length) + "/" + String.valueOf(captureBufferAvailableBytes) + " bytes from capture buffer into input buffer");
             int flags = 0;
-            if (captureBufferAvailableBytes == 0) {
+            byte[] subFrame;
+            if (mCaptureBuffer.limit() != mCaptureBuffer.position()) {
+                int inputBufferAvailableBytes = inputBuffer.limit() - inputBuffer.position();
+                int captureBufferAvailableBytes = mCaptureBuffer.limit() - mCaptureBuffer.position();
+                subFrame = new byte[Math.min(inputBufferAvailableBytes, captureBufferAvailableBytes)];
+                mCaptureBuffer.get(subFrame);
+            } else{
                 flags = MediaCodec.BUFFER_FLAG_END_OF_STREAM;
+                inputBuffer.put(ByteBuffer.allocate(0));
+                subFrame = new byte[0];
                 Log.d(TAG, "Setting end of stream flag");
             }
-            mediaCodec.queueInputBuffer(i, 0, subFrame.length, mTimestamp, flags);
+            inputBuffer.put(subFrame);
+            mediaCodec.queueInputBuffer(i, 0, subFrame.length, 1000 * mTimestamp, flags);
             mTimestamp += 1000 * subFrame.length / (2 * 44100);
         }
 
         @Override
         public void onOutputBufferAvailable(MediaCodec mediaCodec, int i, MediaCodec.BufferInfo bufferInfo) {
-            //Log.d(TAG, "Output buffer " + String.valueOf(i) + " available with " + String.valueOf(bufferInfo.size) + " bytes of available data");
             ByteBuffer outputBuffer = mediaCodec.getOutputBuffer(i);
             mediaCodec.releaseOutputBuffer(i, false);
-            //Log.d(TAG, "Output buffer released");
+
+            if (bufferInfo.flags == MediaCodec.BUFFER_FLAG_END_OF_STREAM) {
+                Log.d(TAG, "Received end of stream flag");
+                mCodec.stop();
+                mCodec.release();
+            }
         }
 
         @Override
