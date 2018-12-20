@@ -118,6 +118,17 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
     public void onNewAudioFrame(long timestamp, short[] audioData) {
         mPresentationTimestamp = 0;
         Log.d(TAG, "New audio frame with " + String.valueOf(audioData.length) + " samples and timestamp " + timestamp + " received");
+
+        prepareCaptureBuffer(audioData);
+        prepareCodec();
+        prepareMuxer(timestamp);
+
+        Log.d(TAG, "Starting codec");
+        mCodec.start();
+        mEndOfStream = false;
+    }
+
+    private void prepareCaptureBuffer(short[] audioData) {
         if (mCaptureBuffer == null) {
             mCaptureBuffer = ByteBuffer.allocate(2 * audioData.length);
         } else if (mCaptureBuffer.capacity() != 2 * audioData.length) {
@@ -129,7 +140,9 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
         mCaptureBuffer.asShortBuffer().put(audioData);
         mCaptureBuffer.position(2 * audioData.length);
         mCaptureBuffer.flip();
+    }
 
+    private void prepareCodec() {
         if (mCodec != null) {
             mCodec.stop();
             mCodec.release();
@@ -145,7 +158,9 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
         } catch (IOException e) {
             throw new RuntimeException("Cannot create codec");
         }
+    }
 
+    private void prepareMuxer(long timestamp) {
         new File(audioDirectory(timestamp)).mkdirs();
         String audioPathName = audioDirectory(timestamp) + "/" + audioFilename(timestamp);
         Log.d(TAG, "Output file: " + audioPathName);
@@ -154,9 +169,6 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
         } catch (IOException e) {
             throw new RuntimeException("Cannot create Muxer: " + e.toString());
         }
-        Log.d(TAG, "Starting codec");
-        mCodec.start();
-        mEndOfStream = false;
     }
 
     private String audioDirectory(long timestamp) {
