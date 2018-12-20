@@ -42,7 +42,7 @@
         <service
             android:name=".CloudService"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true" />
     </application>
 
 </manifest>
