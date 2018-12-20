@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    AudioEncoderService mService;
+    CloudService mService;
     boolean mBound = false;
     private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
-            AudioEncoderService.AudioEncoderBinder binder = (AudioEncoderService.AudioEncoderBinder) service;
+            CloudService.CloudBinder binder = (CloudService.CloudBinder) service;
             mService = binder.getService();
             mBound = true;
         }
@@ -69,8 +69,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Intent intent = new Intent(this, AudioEncoderService.class);
-        Log.d(TAG,"Binding AudioEncoderService");
+        Intent intent = new Intent(this, CloudService.class);
+        Log.d(TAG,"Binding CloudService");
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 

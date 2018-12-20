@@ -31,16 +31,16 @@
             android:enabled="true"
             android:exported="true" />
         <service
-            android:name=".FileWriterService"
-            android:enabled="true"
-            android:exported="true" />
-        <service
             android:name=".FileRemoverJobService"
             android:enabled="true"
             android:exported="true"
             android:permission="android.permission.BIND_JOB_SERVICE" />
         <service
             android:name=".AudioEncoderService"
+            android:enabled="true"
+            android:exported="true" />
+        <service
+            android:name=".CloudService"
             android:enabled="true"
             android:exported="true"></service>
     </application>

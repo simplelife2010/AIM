@@ -1,6 +1,8 @@
 package de.db.aim;
 
 import android.app.Service;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -31,6 +33,7 @@ import java.util.TimeZone;
 public class AudioEncoderService extends Service implements AudioCollectorListener {
 
     private static final String TAG = AudioEncoderService.class.getSimpleName();
+    private static final int FILE_REMOVER_JOB_ID = 1;
 
     private AudioEncoderBinder mBinder = new AudioEncoderBinder();
     private EncoderCallback mEncoderCallback = new EncoderCallback();
@@ -77,7 +80,13 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
             if (getString(R.string.pref_format_type_key).equals(key)
                     || getString(R.string.pref_bit_rate_key).equals(key)
                     || getString(R.string.pref_encoder_buffer_size_key).equals(key)) {
-                Log.i(TAG, "A preference has been changed: " + key);
+                Log.i(TAG, "An encoder preference has been changed: " + key);
+            }
+            if (getString(R.string.pref_remove_period_key).equals(key)
+                    || getString(R.string.pref_keep_files_key).equals(key)) {
+                Log.i(TAG, "A file remover preference has been changed: " + key);
+                cancelFileRemoverJob();
+                scheduleFileRemoverJob();
             }
         }
     };
@@ -88,6 +97,7 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
         Intent intent = new Intent(this, AudioCollectorService.class);
         Log.d(TAG,"Binding AudioCollectorService");
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        scheduleFileRemoverJob();
     }
 
     @Override
@@ -99,6 +109,7 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
             mCodec.stop();
             mCodec.release();
         }
+        cancelFileRemoverJob();
         super.onDestroy();
     }
 
@@ -126,6 +137,24 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
         Log.d(TAG, "Starting codec");
         mCodec.start();
         mEndOfStream = false;
+    }
+
+    private void scheduleFileRemoverJob() {
+        int removePeriod = integerPreferenceValue(R.string.pref_remove_period_key);
+        Log.d(TAG, "Scheduling file remover job to run every " + String.valueOf(removePeriod) + " minutes");
+        JobScheduler jobScheduler =
+                (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler.schedule(new JobInfo.Builder(FILE_REMOVER_JOB_ID,
+                new ComponentName(this, FileRemoverJobService.class))
+                .setPeriodic(60 * 1000 * removePeriod)
+                .build());
+    }
+
+    private void cancelFileRemoverJob() {
+        Log.d(TAG, "Cancelling file remover job");
+        JobScheduler jobScheduler =
+                (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler.cancel(FILE_REMOVER_JOB_ID);
     }
 
     private void prepareCaptureBuffer(short[] audioData) {
