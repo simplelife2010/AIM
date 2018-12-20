@@ -256,6 +256,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // guidelines.
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_format_type_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_bit_rate_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_encoder_buffer_size_key)));
         }
 
         @Override

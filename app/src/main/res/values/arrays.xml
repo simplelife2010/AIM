@@ -116,34 +116,47 @@
     </string-array>
 
     <string-array name="pref_bit_rate_titles">
-        <item>1 kbit/s</item>
-        <item>2 kbit/s</item>
-        <item>5 kbit/s</item>
-        <item>10 kbit/s</item>
-        <item>20 kbit/s</item>
-        <item>50 kbit/s</item>
-        <item>100 kbit/s</item>
-        <item>200 kbit/s</item>
-        <item>500 kbit/s</item>
-        <item>1 Mbit/s</item>
-        <item>2 Mbit/s</item>
-        <item>5 Mbit/s</item>
-        <item>10 Mbit/s</item>
+        <item>8 kbit/s</item>
+        <item>16 kbit/s</item>
+        <item>32 kbit/s</item>
+        <item>64 kbit/s</item>
+        <item>128 kbit/s</item>
+        <item>256 kbit/s</item>
+        <item>320 kbit/s</item>
     </string-array>
     <string-array name="pref_bit_rate_values">
-        <item>1000</item>
-        <item>2000</item>
-        <item>5000</item>
-        <item>10000</item>
-        <item>20000</item>
-        <item>50000</item>
-        <item>100000</item>
-        <item>200000</item>
-        <item>500000</item>
-        <item>1000000</item>
-        <item>2000000</item>
-        <item>5000000</item>
-        <item>10000000</item>
+        <item>8000</item>
+        <item>16000</item>
+        <item>32000</item>
+        <item>64000</item>
+        <item>128000</item>
+        <item>256000</item>
+        <item>320000</item>
+    </string-array>
+
+    <string-array name="pref_encoder_buffer_size_titles">
+        <item>512 Byte</item>
+        <item>1024 Byte</item>
+        <item>2048 Byte</item>
+        <item>4096 Byte</item>
+        <item>8192 Byte</item>
+        <item>16384 Byte</item>
+        <item>32768 Byte</item>
+        <item>65536 Byte</item>
+        <item>131072 Byte</item>
+        <item>262144 Byte</item>
+    </string-array>
+    <string-array name="pref_encoder_buffer_size_values">
+        <item>512</item>
+        <item>1024</item>
+        <item>2048</item>
+        <item>4096</item>
+        <item>8192</item>
+        <item>16384</item>
+        <item>32768</item>
+        <item>65536</item>
+        <item>131072</item>
+        <item>262144</item>
     </string-array>
 
 </resources>

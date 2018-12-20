@@ -36,7 +36,7 @@ public class AudioCollectorWorker implements Runnable {
         int samplesPerFrame = mSampleRate * mFrameLengthInMilliseconds / 1000;
         int chunkSizeInSamples = mSampleRate * mChunkSizeInMilliseconds / 1000;
         mRecorder = getRecorder();
-        int mCurrentOffset = 0;
+        mCurrentOffset = 0;
         mAudioData = new short[samplesPerFrame];
         mRecorder.startRecording();
         //Empty buffer before reading timestamp
