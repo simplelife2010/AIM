@@ -7,15 +7,11 @@
         android:icon="@drawable/ic_mic_black_24dp"
         android:title="@string/pref_header_audio_collector" />
     <header
-        android:fragment="de.db.aim.SettingsActivity$FileWriterPreferenceFragment"
-        android:icon="@drawable/ic_folder_black_24dp"
-        android:title="@string/pref_header_file_writer" />
+        android:fragment="de.db.aim.SettingsActivity$AudioEncoderPreferenceFragment"
+        android:icon="@drawable/ic_transform_black_24dp"
+        android:title="@string/pref_header_audio_encoder" />
     <header
         android:fragment="de.db.aim.SettingsActivity$FileRemoverPreferenceFragment"
         android:icon="@drawable/ic_delete_black_24dp"
         android:title="@string/pref_header_file_remover" />
-    <header
-        android:fragment="de.db.aim.SettingsActivity$AudioEncoderPreferenceFragment"
-        android:icon="@drawable/ic_transform_black_24dp"
-        android:title="@string/pref_header_audio_encoder" />
 </preference-headers>

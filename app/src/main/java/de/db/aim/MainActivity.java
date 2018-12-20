@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    FileWriterService mService;
+    AudioEncoderService mService;
     boolean mBound = false;
     private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
-            FileWriterService.FileWriterBinder binder = (FileWriterService.FileWriterBinder) service;
+            AudioEncoderService.AudioEncoderBinder binder = (AudioEncoderService.AudioEncoderBinder) service;
             mService = binder.getService();
             mBound = true;
         }
@@ -53,7 +53,6 @@ public class MainActivity extends AppCompatActivity {
         //sp.edit().clear().apply();
 
         PreferenceManager.setDefaultValues(this, R.xml.pref_audio_collector, false);
-        PreferenceManager.setDefaultValues(this, R.xml.pref_file_writer, false);
         PreferenceManager.setDefaultValues(this, R.xml.pref_file_remover, false);
         PreferenceManager.setDefaultValues(this, R.xml.pref_audio_encoder, false);
 
@@ -70,8 +69,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Intent intent = new Intent(this, FileWriterService.class);
-        Log.d(TAG,"Binding FileWriterService");
+        Intent intent = new Intent(this, AudioEncoderService.class);
+        Log.d(TAG,"Binding AudioEncoderService");
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
@@ -87,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        Log.d(TAG,"Unbinding FileWriterService");
+        Log.d(TAG,"Unbinding AudioEncoderService");
         unbindService(mConnection);
         super.onDestroy();
     }

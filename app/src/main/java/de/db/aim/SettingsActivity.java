@@ -140,7 +140,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     protected boolean isValidFragment(String fragmentName) {
         return PreferenceFragment.class.getName().equals(fragmentName)
                 || AudioCollectorPreferenceFragment.class.getName().equals(fragmentName)
-                || FileWriterPreferenceFragment.class.getName().equals(fragmentName)
                 || FileRemoverPreferenceFragment.class.getName().equals(fragmentName)
                 || AudioEncoderPreferenceFragment.class.getName().equals(fragmentName);
     }
@@ -164,36 +163,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_buffer_size_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_chunk_size_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_frame_length_key)));
-        }
-
-        @Override
-        public boolean onOptionsItemSelected(MenuItem item) {
-            int id = item.getItemId();
-            if (id == android.R.id.home) {
-                startActivity(new Intent(getActivity(), SettingsActivity.class));
-                return true;
-            }
-            return super.onOptionsItemSelected(item);
-        }
-    }
-
-    /**
-     * This fragment shows File Writer preferences only. It is used when the
-     * activity is showing a two-pane settings UI.
-     */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class FileWriterPreferenceFragment extends PreferenceFragment {
-        @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_file_writer);
-            setHasOptionsMenu(true);
-
-            // Bind the summaries of EditText/List/Dialog/Ringtone preferences
-            // to their values. When their values change, their summaries are
-            // updated to reflect the new value, per the Android Design
-            // guidelines.
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_file_prefix_key)));
         }
 
         @Override
@@ -254,6 +223,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
             // guidelines.
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_file_prefix_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_format_type_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_bit_rate_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_encoder_buffer_size_key)));
