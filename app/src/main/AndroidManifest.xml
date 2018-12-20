@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="de.db.aim">
 
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
@@ -41,6 +42,10 @@
             android:exported="true" />
         <service
             android:name=".CloudService"
+            android:enabled="true"
+            android:exported="true" />
+        <service
+            android:name="org.eclipse.paho.android.service.MqttService"
             android:enabled="true"
             android:exported="true" />
     </application>

@@ -45,7 +45,7 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
     private long mPresentationTimestamp;
     private AudioCollectorService mService;
     private List<AudioEncoderListener> mListeners = new ArrayList<AudioEncoderListener>();
-    boolean mBound = false;
+    private boolean mBound = false;
     private ServiceConnection mConnection = new ServiceConnection() {
 
         @Override
