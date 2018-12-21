@@ -40,8 +40,10 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
     private MediaCodec mCodec;
     private boolean mEndOfStream;
     private MediaMuxer mMuxer;
+    private String mAudioPathName;
     private int mAudioTrackIndex;
     private ByteBuffer mCaptureBuffer;
+    private long mTimestamp;
     private long mPresentationTimestamp;
     private AudioCollectorService mService;
     private List<AudioEncoderListener> mListeners = new ArrayList<AudioEncoderListener>();
@@ -128,6 +130,7 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
     @Override
     public void onNewAudioFrame(long timestamp, short[] audioData) {
         mPresentationTimestamp = 0;
+        mTimestamp = timestamp;
         Log.d(TAG, "New audio frame with " + String.valueOf(audioData.length) + " samples and timestamp " + timestamp + " received");
 
         prepareCaptureBuffer(audioData);
@@ -191,10 +194,10 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
 
     private void prepareMuxer(long timestamp) {
         new File(audioDirectory(timestamp)).mkdirs();
-        String audioPathName = audioDirectory(timestamp) + "/" + audioFilename(timestamp);
-        Log.d(TAG, "Output file: " + audioPathName);
+        mAudioPathName = audioDirectory(timestamp) + "/" + audioFilename(timestamp);
+        Log.d(TAG, "Output file: " + mAudioPathName);
         try {
-            mMuxer = new MediaMuxer(audioPathName, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            mMuxer = new MediaMuxer(mAudioPathName, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
         } catch (IOException e) {
             throw new RuntimeException("Cannot create Muxer: " + e.toString());
         }
@@ -239,10 +242,6 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
     public void unregisterAudioEncoderListener(AudioEncoderListener listener) {
         Log.d(TAG, "Removing listener: " + listener.toString());
         mListeners.remove(listener);
-    }
-
-    List<AudioEncoderListener> getAudioEncoderListeners() {
-        return mListeners;
     }
 
     class AudioEncoderBinder extends Binder {
@@ -295,6 +294,9 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
                 mMuxer.stop();
                 mMuxer.release();
                 mMuxer = null;
+                for (AudioEncoderListener listener : mListeners) {
+                    listener.onNewEncodedAudioFrame(mTimestamp, mAudioPathName);
+                }
             }
         }
 

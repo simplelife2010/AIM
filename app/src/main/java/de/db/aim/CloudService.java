@@ -14,6 +14,7 @@ import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
+import org.eclipse.paho.client.mqttv3.DisconnectedBufferOptions;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttToken;
@@ -22,7 +23,7 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
-public class CloudService extends Service {
+public class CloudService extends Service implements AudioEncoderListener {
 
     private static final String TAG = CloudService.class.getSimpleName();
 
@@ -40,10 +41,12 @@ public class CloudService extends Service {
             AudioEncoderService.AudioEncoderBinder binder = (AudioEncoderService.AudioEncoderBinder) service;
             mService = binder.getService();
             mBound = true;
+            mService.registerAudioEncoderListener(CloudService.this);
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
+            mService.unregisterAudioEncoderListener(CloudService.this);
             mBound = false;
         }
     };
@@ -84,6 +87,11 @@ public class CloudService extends Service {
         return mBinder;
     }
 
+    @Override
+    public void onNewEncodedAudioFrame(long timestamp, String audioPathName) {
+        Log.d(TAG, "Received encoded audio filename " + audioPathName + " with timestamp " + timestamp);
+    }
+
     void setupService() {
         String clientId = stringPreferenceValue(R.string.pref_mqtt_client_id_prefix_key) + "_" + Build.SERIAL;
         Log.i(TAG, "MQTT client id is " + clientId);
@@ -99,7 +107,7 @@ public class CloudService extends Service {
         connectOptions.setMqttVersion(MqttConnectOptions.MQTT_VERSION_DEFAULT);
 
         try {
-            IMqttToken token = mMqttClient.connect(connectOptions, null, new IMqttActionListenerImpl());
+            IMqttToken token = mMqttClient.connect(connectOptions, null, new IMqttConnectActionListener());
             Log.d(TAG, "MQTT connect token: " + token.toString());
         } catch (MqttException e) {
             e.printStackTrace();
@@ -131,7 +139,11 @@ public class CloudService extends Service {
 
         @Override
         public void connectComplete(boolean reconnect, String serverURI) {
-            Log.d(TAG, "Connect to " + serverURI + " complete with reconnect = " + reconnect);
+            if (reconnect) {
+                Log.d(TAG, "Reconnect to " + serverURI + " complete");
+            } else {
+                Log.d(TAG, "Connect to " + serverURI + " complete");
+            }
         }
 
         @Override
@@ -150,18 +162,24 @@ public class CloudService extends Service {
         }
     }
 
-    private class IMqttActionListenerImpl implements IMqttActionListener {
+    private class IMqttConnectActionListener implements IMqttActionListener {
 
-        private final String TAG = IMqttActionListenerImpl.class.getSimpleName();
+        private final String TAG = IMqttConnectActionListener.class.getSimpleName();
 
         @Override
         public void onSuccess(IMqttToken asyncActionToken) {
-            Log.d(TAG, "MQTT action successful");
+            Log.d(TAG, "MQTT connect action successful");
+            DisconnectedBufferOptions disconnectedBufferOptions = new DisconnectedBufferOptions();
+            disconnectedBufferOptions.setBufferEnabled(true);
+            disconnectedBufferOptions.setBufferSize(100);
+            disconnectedBufferOptions.setPersistBuffer(false);
+            disconnectedBufferOptions.setDeleteOldestMessages(false);
+            mMqttClient.setBufferOpts(disconnectedBufferOptions);
         }
 
         @Override
         public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-            Log.d(TAG, "MQTT action unsuccessful: "  + exception.toString());
+            Log.d(TAG, "MQTT connect action unsuccessful: "  + exception.toString());
         }
     }
 }
