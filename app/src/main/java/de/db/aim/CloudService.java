@@ -14,6 +14,13 @@ import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 public class CloudService extends Service {
 
@@ -46,7 +53,7 @@ public class CloudService extends Service {
         @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-            if (getString(R.string.pref_client_id_prefix_key).equals(key)) {
+            if (getString(R.string.pref_mqtt_client_id_prefix_key).equals(key)) {
                 Log.i(TAG, "An encoder preference has been changed: " + key);
                 setupService();
             }
@@ -78,8 +85,25 @@ public class CloudService extends Service {
     }
 
     void setupService() {
-        String clientId = stringPreferenceValue(R.string.pref_client_id_prefix_key) + "_" + Build.SERIAL;
+        String clientId = stringPreferenceValue(R.string.pref_mqtt_client_id_prefix_key) + "_" + Build.SERIAL;
         Log.i(TAG, "MQTT client id is " + clientId);
+        mMqttClient = new MqttAndroidClient(getApplicationContext(), stringPreferenceValue(R.string.pref_mqtt_server_uri_key), clientId);
+        Log.d(TAG, "Created MQTT Client");
+        mMqttClient.setCallback(new MqttCallbackImpl());
+        MqttConnectOptions connectOptions = new MqttConnectOptions();
+        connectOptions.setAutomaticReconnect(true);
+        connectOptions.setCleanSession(false);
+        connectOptions.setConnectionTimeout(30);
+        connectOptions.setKeepAliveInterval(60);
+        connectOptions.setMaxInflight(10);
+        connectOptions.setMqttVersion(MqttConnectOptions.MQTT_VERSION_DEFAULT);
+
+        try {
+            IMqttToken token = mMqttClient.connect(connectOptions, null, new IMqttActionListenerImpl());
+            Log.d(TAG, "MQTT connect token: " + token.toString());
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
     }
 
     private String stringPreferenceValue(int key) {
@@ -98,6 +122,46 @@ public class CloudService extends Service {
         CloudService getService() {
             // Return this instance of LocalService so clients can call public methods
             return CloudService.this;
+        }
+    }
+
+    private class MqttCallbackImpl implements MqttCallbackExtended {
+
+        private final String TAG = MqttCallbackImpl.class.getSimpleName();
+
+        @Override
+        public void connectComplete(boolean reconnect, String serverURI) {
+            Log.d(TAG, "Connect to " + serverURI + " complete with reconnect = " + reconnect);
+        }
+
+        @Override
+        public void connectionLost(Throwable cause) {
+            Log.d(TAG, "Connection lost: " + cause.toString());
+        }
+
+        @Override
+        public void messageArrived(String topic, MqttMessage message) throws Exception {
+            Log.d(TAG, "Message arrived at topic " + topic);
+        }
+
+        @Override
+        public void deliveryComplete(IMqttDeliveryToken token) {
+            Log.d(TAG, "Message delivery complete: " + token.toString());
+        }
+    }
+
+    private class IMqttActionListenerImpl implements IMqttActionListener {
+
+        private final String TAG = IMqttActionListenerImpl.class.getSimpleName();
+
+        @Override
+        public void onSuccess(IMqttToken asyncActionToken) {
+            Log.d(TAG, "MQTT action successful");
+        }
+
+        @Override
+        public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
+            Log.d(TAG, "MQTT action unsuccessful: "  + exception.toString());
         }
     }
 }

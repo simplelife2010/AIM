@@ -257,7 +257,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
             // guidelines.
-            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_client_id_prefix_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_mqtt_client_id_prefix_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_mqtt_server_uri_key)));
         }
 
         @Override

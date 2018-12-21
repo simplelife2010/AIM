@@ -53,8 +53,12 @@
     <!-- Cloud settings -->
     <string name="pref_header_cloud">Cloud</string>
 
-    <string name="pref_title_client_id_prefix">MQTT client ID prefix</string>
-    <string name="pref_client_id_prefix_key">client_id_prefix</string>
-    <string name="pref_client_id_prefix_default_value">aim</string>
+    <string name="pref_title_mqtt_client_id_prefix">MQTT client ID prefix</string>
+    <string name="pref_mqtt_client_id_prefix_key">mqtt_client_id_prefix</string>
+    <string name="pref_mqtt_client_id_prefix_default_value">hacker</string>
+
+    <string name="pref_title_mqtt_server_uri">MQTT server URI</string>
+    <string name="pref_mqtt_server_uri_key">mqtt_server_uri</string>
+    <string name="pref_mqtt_server_uri_default_value">tcp://msggwt1.service.deutschebahn.com:1860</string>
 
 </resources>
