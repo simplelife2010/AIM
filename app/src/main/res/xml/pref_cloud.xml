@@ -15,4 +15,28 @@
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="@string/pref_title_mqtt_server_uri" />
+    <EditTextPreference
+        android:defaultValue="@string/pref_topic_level_principal_default_value"
+        android:inputType="text"
+        android:key="@string/pref_topic_level_principal_key"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_topic_level_principal" />
+    <EditTextPreference
+        android:defaultValue="@string/pref_topic_level_application_default_value"
+        android:inputType="text"
+        android:key="@string/pref_topic_level_application_key"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_topic_level_application" />
+    <EditTextPreference
+        android:defaultValue="@string/pref_topic_level_component_audio_default_value"
+        android:inputType="text"
+        android:key="@string/pref_topic_level_component_audio_key"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_topic_level_component_audio" />
 </PreferenceScreen>

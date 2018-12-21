@@ -59,7 +59,11 @@ public class CloudService extends Service implements AudioEncoderListener {
         @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-            if (getString(R.string.pref_mqtt_client_id_prefix_key).equals(key)) {
+            if (getString(R.string.pref_mqtt_client_id_prefix_key).equals(key) ||
+                    getString(R.string.pref_mqtt_server_uri_key).equals(key) ||
+                    getString(R.string.pref_topic_level_principal_key).equals(key) ||
+                    getString(R.string.pref_topic_level_application_key).equals(key) ||
+                    getString(R.string.pref_topic_level_component_audio_key).equals(key)) {
                 Log.i(TAG, "An encoder preference has been changed: " + key);
                 setupService();
             }
@@ -97,7 +101,10 @@ public class CloudService extends Service implements AudioEncoderListener {
     }
 
     private String getTopic() {
-        return "HACKER/AIM/AndroidTest/MyDevice/Audio";
+        return stringPreferenceValue(R.string.pref_topic_level_principal_key) + "/" +
+                Build.SERIAL + "/" +
+                stringPreferenceValue(R.string.pref_topic_level_application_key) + "/" +
+                stringPreferenceValue(R.string.pref_topic_level_component_audio_key);
     }
 
     void setupService() {

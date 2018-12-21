@@ -259,6 +259,9 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // guidelines.
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_mqtt_client_id_prefix_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_mqtt_server_uri_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_topic_level_principal_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_topic_level_application_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_topic_level_component_audio_key)));
         }
 
         @Override

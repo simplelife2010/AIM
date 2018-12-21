@@ -61,4 +61,16 @@
     <string name="pref_mqtt_server_uri_key">mqtt_server_uri</string>
     <string name="pref_mqtt_server_uri_default_value">tcp://msggwt1.service.deutschebahn.com:1860</string>
 
+    <string name="pref_title_topic_level_principal">Topic level principal</string>
+    <string name="pref_topic_level_principal_key">topic_level_principal</string>
+    <string name="pref_topic_level_principal_default_value">HACKER</string>
+
+    <string name="pref_title_topic_level_application">Topic level application</string>
+    <string name="pref_topic_level_application_key">topic_level_application</string>
+    <string name="pref_topic_level_application_default_value">AIM_PROTOTYPE</string>
+
+    <string name="pref_title_topic_level_component_audio">Topic level component audio</string>
+    <string name="pref_topic_level_component_audio_key">topic_level_component_audio</string>
+    <string name="pref_topic_level_component_audio_default_value">AUDIO</string>
+
 </resources>
