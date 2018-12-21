@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
@@ -22,6 +23,8 @@ import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+
+import java.nio.charset.StandardCharsets;
 
 public class CloudService extends Service implements AudioEncoderListener {
 
@@ -90,6 +93,11 @@ public class CloudService extends Service implements AudioEncoderListener {
     @Override
     public void onNewEncodedAudioFrame(long timestamp, String audioPathName) {
         Log.d(TAG, "Received encoded audio filename " + audioPathName + " with timestamp " + timestamp);
+        new AudioPublisherTask().execute(new AudioPublisherTaskParams(mMqttClient, getTopic(), timestamp, new String(audioPathName)));
+    }
+
+    private String getTopic() {
+        return "HACKER/AIM/AndroidTest/MyDevice/Audio";
     }
 
     void setupService() {
@@ -180,6 +188,63 @@ public class CloudService extends Service implements AudioEncoderListener {
         @Override
         public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
             Log.d(TAG, "MQTT connect action unsuccessful: "  + exception.toString());
+        }
+    }
+
+    private class AudioPublisherTaskParams {
+        MqttAndroidClient mqttClient;
+        String topic;
+        long timestamp;
+        String pathName;
+
+        AudioPublisherTaskParams(MqttAndroidClient mqttClient, String topic, long timestamp, String pathName) {
+            this.mqttClient = mqttClient;
+            this.topic = topic;
+            this.timestamp = timestamp;
+            this.pathName = pathName;
+        }
+    }
+
+    private static class AudioPublisherTask extends AsyncTask<AudioPublisherTaskParams, Void, Void> {
+
+        private static final String TAG = AudioPublisherTask.class.getSimpleName();
+
+        @Override
+        protected Void doInBackground(AudioPublisherTaskParams... audioPublisherTaskParams) {
+            Log.d(TAG, "AudioPublisherTask starting to publish " +
+                    audioPublisherTaskParams[0].pathName +
+                    " with timestamp " +
+                    audioPublisherTaskParams[0].timestamp +
+                    " on topic " +
+                    audioPublisherTaskParams[0].topic);
+            publishAudioFile(audioPublisherTaskParams[0].mqttClient,
+                    audioPublisherTaskParams[0].topic,
+                    audioPublisherTaskParams[0].timestamp,
+                    audioPublisherTaskParams[0].pathName);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            Log.d(TAG, "AudioPublisherTask finished");
+        }
+
+        private void publishAudioFile(MqttAndroidClient mqttClient, String topic, long timestamp, String pathName) {
+            try {
+                Log.d(TAG, "Publishing audio file");
+                MqttMessage message = new MqttMessage();
+                message.setPayload(getPayload(timestamp, pathName));
+                message.setQos(1);
+                message.setRetained(false);
+                mqttClient.publish(topic, message);
+            } catch (MqttException e) {
+                Log.e(TAG, "Could not publish message: " + e.toString());
+            }
+        }
+
+        private byte[] getPayload(long timestamp, String pathName) {
+            return new String("Test-Payload").getBytes(StandardCharsets.UTF_8);
         }
     }
 }
