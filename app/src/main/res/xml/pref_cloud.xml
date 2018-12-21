@@ -39,4 +39,12 @@
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="@string/pref_title_topic_level_component_audio" />
+    <ListPreference
+        android:defaultValue="@string/pref_audio_publish_period_default_value"
+        android:entries="@array/pref_audio_publish_period_titles"
+        android:entryValues="@array/pref_audio_publish_period_values"
+        android:key="@string/pref_audio_publish_period_key"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null"
+        android:title="@string/pref_title_audio_publish_period" />
 </PreferenceScreen>

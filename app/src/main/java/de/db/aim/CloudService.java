@@ -34,6 +34,7 @@ public class CloudService extends Service implements AudioEncoderListener {
     private AudioEncoderService mService;
     private boolean mBound = false;
     private MqttAndroidClient mMqttClient;
+    private long mLastAudioPublishTimestamp;
 
     private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -63,7 +64,8 @@ public class CloudService extends Service implements AudioEncoderListener {
                     getString(R.string.pref_mqtt_server_uri_key).equals(key) ||
                     getString(R.string.pref_topic_level_principal_key).equals(key) ||
                     getString(R.string.pref_topic_level_application_key).equals(key) ||
-                    getString(R.string.pref_topic_level_component_audio_key).equals(key)) {
+                    getString(R.string.pref_topic_level_component_audio_key).equals(key) ||
+                    getString(R.string.pref_audio_publish_period_key).equals(key)){
                 Log.i(TAG, "An encoder preference has been changed: " + key);
                 setupService();
             }
@@ -97,7 +99,12 @@ public class CloudService extends Service implements AudioEncoderListener {
     @Override
     public void onNewEncodedAudioFrame(long timestamp, String audioPathName) {
         Log.d(TAG, "Received encoded audio filename " + audioPathName + " with timestamp " + timestamp);
-        new AudioPublisherTask().execute(new AudioPublisherTaskParams(mMqttClient, getTopic(), timestamp, new String(audioPathName)));
+        long now = System.currentTimeMillis();
+        if (now >= mLastAudioPublishTimestamp + 1000 * integerPreferenceValue(R.string.pref_audio_publish_period_key)) {
+            Log.d(TAG, "Audio publish period is elapsed");
+            mLastAudioPublishTimestamp = now;
+            new AudioPublisherTask().execute(new AudioPublisherTaskParams(mMqttClient, getTopic(), timestamp, new String(audioPathName)));
+        }
     }
 
     private String getTopic() {
@@ -108,6 +115,18 @@ public class CloudService extends Service implements AudioEncoderListener {
     }
 
     void setupService() {
+        mLastAudioPublishTimestamp = System.currentTimeMillis() - 1000 * integerPreferenceValue(R.string.pref_audio_publish_period_key);
+        if (mMqttClient != null) {
+            try {
+                Log.d(TAG, "Disconnecting MQTT client...");
+                mMqttClient.disconnect();
+                Thread.sleep(100);
+            } catch (MqttException e) {
+                Log.e(TAG, "Could not disconnect MQTT client: " + e.toString());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         String clientId = stringPreferenceValue(R.string.pref_mqtt_client_id_prefix_key) + "_" + Build.SERIAL;
         Log.i(TAG, "MQTT client id is " + clientId);
         mMqttClient = new MqttAndroidClient(getApplicationContext(), stringPreferenceValue(R.string.pref_mqtt_server_uri_key), clientId);
@@ -163,7 +182,7 @@ public class CloudService extends Service implements AudioEncoderListener {
 
         @Override
         public void connectionLost(Throwable cause) {
-            Log.d(TAG, "Connection lost: " + cause.toString());
+            Log.d(TAG, "MQTT Connection lost");
         }
 
         @Override

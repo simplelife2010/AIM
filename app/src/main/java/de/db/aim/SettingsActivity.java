@@ -262,6 +262,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_topic_level_principal_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_topic_level_application_key)));
             bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_topic_level_component_audio_key)));
+            bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_audio_publish_period_key)));
         }
 
         @Override

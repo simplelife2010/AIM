@@ -49,13 +49,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-        sp.edit().clear().apply();
+        //SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        //sp.edit().clear().apply();
 
-        PreferenceManager.setDefaultValues(this, R.xml.pref_audio_collector, true);
-        PreferenceManager.setDefaultValues(this, R.xml.pref_file_remover, true);
-        PreferenceManager.setDefaultValues(this, R.xml.pref_audio_encoder, true);
-        PreferenceManager.setDefaultValues(this, R.xml.pref_cloud, true);
+        PreferenceManager.setDefaultValues(this, R.xml.pref_audio_collector, false);
+        PreferenceManager.setDefaultValues(this, R.xml.pref_file_remover, false);
+        PreferenceManager.setDefaultValues(this, R.xml.pref_audio_encoder, false);
+        PreferenceManager.setDefaultValues(this, R.xml.pref_cloud, false);
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);

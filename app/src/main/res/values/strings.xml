@@ -73,4 +73,8 @@
     <string name="pref_topic_level_component_audio_key">topic_level_component_audio</string>
     <string name="pref_topic_level_component_audio_default_value">AUDIO</string>
 
+    <string name="pref_title_audio_publish_period">Audio publish period</string>
+    <string name="pref_audio_publish_period_key">audio_publish_period</string>
+    <string name="pref_audio_publish_period_default_value">300</string>
+
 </resources>
