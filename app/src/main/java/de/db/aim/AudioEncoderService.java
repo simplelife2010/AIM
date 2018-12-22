@@ -40,7 +40,8 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
     private MediaCodec mCodec;
     private boolean mEndOfStream;
     private MediaMuxer mMuxer;
-    private String mAudioPathName;
+    private String mAudioPath;
+    private String mAudioFilename;
     private int mAudioTrackIndex;
     private ByteBuffer mCaptureBuffer;
     private long mTimestamp;
@@ -194,10 +195,11 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
 
     private void prepareMuxer(long timestamp) {
         new File(audioDirectory(timestamp)).mkdirs();
-        mAudioPathName = audioDirectory(timestamp) + "/" + audioFilename(timestamp);
-        Log.d(TAG, "Output file: " + mAudioPathName);
+        mAudioPath = audioDirectory(timestamp);
+        mAudioFilename = audioFilename(timestamp);
+        Log.d(TAG, "Output file: " + mAudioFilename);
         try {
-            mMuxer = new MediaMuxer(mAudioPathName, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            mMuxer = new MediaMuxer(mAudioPath + "/" + mAudioFilename, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
         } catch (IOException e) {
             throw new RuntimeException("Cannot create Muxer: " + e.toString());
         }
@@ -295,7 +297,7 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
                 mMuxer.release();
                 mMuxer = null;
                 for (AudioEncoderListener listener : mListeners) {
-                    listener.onNewEncodedAudioFrame(mTimestamp, mAudioPathName);
+                    listener.onNewEncodedAudioFrame(mTimestamp, mAudioPath, mAudioFilename);
                 }
             }
         }

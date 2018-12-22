@@ -24,7 +24,12 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 public class CloudService extends Service implements AudioEncoderListener {
 
@@ -97,13 +102,13 @@ public class CloudService extends Service implements AudioEncoderListener {
     }
 
     @Override
-    public void onNewEncodedAudioFrame(long timestamp, String audioPathName) {
-        Log.d(TAG, "Received encoded audio filename " + audioPathName + " with timestamp " + timestamp);
+    public void onNewEncodedAudioFrame(long timestamp, String path, String filename) {
+        Log.d(TAG, "Received encoded audio filename " + filename + " with timestamp " + timestamp);
         long now = System.currentTimeMillis();
         if (now >= mLastAudioPublishTimestamp + 1000 * integerPreferenceValue(R.string.pref_audio_publish_period_key)) {
             Log.d(TAG, "Audio publish period is elapsed");
             mLastAudioPublishTimestamp = now;
-            new AudioPublisherTask().execute(new AudioPublisherTaskParams(mMqttClient, getTopic(), timestamp, new String(audioPathName)));
+            new AudioPublisherTask().execute(new AudioPublisherTaskParams(mMqttClient, getTopic(), timestamp, new String(path), new String(filename)));
         }
     }
 
@@ -221,13 +226,15 @@ public class CloudService extends Service implements AudioEncoderListener {
         MqttAndroidClient mqttClient;
         String topic;
         long timestamp;
-        String pathName;
+        String path;
+        String filename;
 
-        AudioPublisherTaskParams(MqttAndroidClient mqttClient, String topic, long timestamp, String pathName) {
+        AudioPublisherTaskParams(MqttAndroidClient mqttClient, String topic, long timestamp, String path, String filename) {
             this.mqttClient = mqttClient;
             this.topic = topic;
             this.timestamp = timestamp;
-            this.pathName = pathName;
+            this.path = path;
+            this.filename = filename;
         }
     }
 
@@ -238,7 +245,7 @@ public class CloudService extends Service implements AudioEncoderListener {
         @Override
         protected Void doInBackground(AudioPublisherTaskParams... audioPublisherTaskParams) {
             Log.d(TAG, "AudioPublisherTask starting to publish " +
-                    audioPublisherTaskParams[0].pathName +
+                    audioPublisherTaskParams[0].filename +
                     " with timestamp " +
                     audioPublisherTaskParams[0].timestamp +
                     " on topic " +
@@ -246,7 +253,8 @@ public class CloudService extends Service implements AudioEncoderListener {
             publishAudioFile(audioPublisherTaskParams[0].mqttClient,
                     audioPublisherTaskParams[0].topic,
                     audioPublisherTaskParams[0].timestamp,
-                    audioPublisherTaskParams[0].pathName);
+                    audioPublisherTaskParams[0].path,
+                    audioPublisherTaskParams[0].filename);
             return null;
         }
 
@@ -256,11 +264,11 @@ public class CloudService extends Service implements AudioEncoderListener {
             Log.d(TAG, "AudioPublisherTask finished");
         }
 
-        private void publishAudioFile(MqttAndroidClient mqttClient, String topic, long timestamp, String pathName) {
+        private void publishAudioFile(MqttAndroidClient mqttClient, String topic, long timestamp, String path, String filename) {
             try {
                 Log.d(TAG, "Publishing audio file");
                 MqttMessage message = new MqttMessage();
-                message.setPayload(getPayload(timestamp, pathName));
+                message.setPayload(getPayload(timestamp, path, filename));
                 message.setQos(1);
                 message.setRetained(false);
                 mqttClient.publish(topic, message);
@@ -269,8 +277,47 @@ public class CloudService extends Service implements AudioEncoderListener {
             }
         }
 
-        private byte[] getPayload(long timestamp, String pathName) {
-            return new String("Test-Payload").getBytes(StandardCharsets.UTF_8);
+        private byte[] getPayload(long timestamp, String path, String filename) {
+            Payload payload = new Payload();
+            payload.setTimestamp(timestamp);
+            File file = new File(path + "/" + filename);
+            try {
+                byte[] bytes = loadFile(file);
+                String encoded = android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT);
+                payload.addMetric("path", path);
+                payload.addMetric("filename", filename);
+                payload.addMetric("channels", new Integer(1));
+                payload.addMetric("sample_rate", new Integer(44100));
+                payload.addMetric("sample_size", new Integer(16));
+                payload.addMetric("compressed_audio_data", encoded);
+            } catch (IOException e) {
+                Log.e(TAG, "Could not read audio file");
+            }
+            return payload.toJson().getBytes(StandardCharsets.UTF_8);
+        }
+
+        private byte[] loadFile(File file) throws IOException {
+            InputStream is = new FileInputStream(file);
+
+            long length = file.length();
+            if (length > Integer.MAX_VALUE) {
+                throw new RuntimeException("File is too large");
+            }
+            byte[] bytes = new byte[(int)length];
+
+            int offset = 0;
+            int numRead = 0;
+            while (offset < bytes.length
+                    && (numRead=is.read(bytes, offset, bytes.length-offset)) >= 0) {
+                offset += numRead;
+            }
+
+            if (offset < bytes.length) {
+                throw new IOException("Could not completely read file "+file.getName());
+            }
+
+            is.close();
+            return bytes;
         }
     }
 }
