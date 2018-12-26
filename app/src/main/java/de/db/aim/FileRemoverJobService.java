@@ -17,10 +17,11 @@ import java.util.Comparator;
 import java.util.List;
 
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-public class FileRemoverJobService extends JobService {
+public class FileRemoverJobService extends MonitorableJobService {
 
     @Override
     public boolean onStartJob(JobParameters jobParameters) {
+        broadcastStatus("Initializing");
         new FileRemoverTask().execute(jobParameters);
         return false;
     }

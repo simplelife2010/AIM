@@ -1,6 +1,5 @@
 package de.db.aim;
 
-import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -29,9 +28,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
-public class CloudService extends Service implements AudioEncoderListener {
+public class CloudService extends MonitorableService implements AudioEncoderListener {
 
     private static final String TAG = CloudService.class.getSimpleName();
 
@@ -84,6 +82,7 @@ public class CloudService extends Service implements AudioEncoderListener {
         Log.d(TAG,"Binding AudioEncoderService");
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         sharedPreferences().registerOnSharedPreferenceChangeListener(mPreferenceChangeListener);
+        broadcastStatus("Initializing");
         setupService();
     }
 

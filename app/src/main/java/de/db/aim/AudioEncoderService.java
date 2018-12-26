@@ -30,7 +30,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-public class AudioEncoderService extends Service implements AudioCollectorListener {
+public class AudioEncoderService extends MonitorableService implements AudioCollectorListener {
 
     private static final String TAG = AudioEncoderService.class.getSimpleName();
     private static final int FILE_REMOVER_JOB_ID = 1;
@@ -98,6 +98,7 @@ public class AudioEncoderService extends Service implements AudioCollectorListen
     public void onCreate() {
         super.onCreate();
         Intent intent = new Intent(this, AudioCollectorService.class);
+        broadcastStatus("Initializing");
         Log.d(TAG,"Binding AudioCollectorService");
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         scheduleFileRemoverJob();

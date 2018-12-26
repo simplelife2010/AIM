@@ -1,10 +1,10 @@
 package de.db.aim;
 
-import android.app.job.JobInfo;
-import android.app.job.JobScheduler;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Build;
@@ -14,12 +14,15 @@ import android.preference.PreferenceManager;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -44,20 +47,29 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String service = intent.getStringExtra("service");
+            Log.d(TAG, "Received from: " + service + " status: " + intent.getStringExtra("status"));
+            ListView listView = (ListView) findViewById(R.id.list_view);
+            ((ArrayAdapter<String>) listView.getAdapter()).add(service);
+        }
+    };
+
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-        //sp.edit().clear().apply();
-
-        PreferenceManager.setDefaultValues(this, R.xml.pref_audio_collector, false);
-        PreferenceManager.setDefaultValues(this, R.xml.pref_file_remover, false);
-        PreferenceManager.setDefaultValues(this, R.xml.pref_audio_encoder, false);
-        PreferenceManager.setDefaultValues(this, R.xml.pref_cloud, false);
+        setDefaultValues(false);
 
         setContentView(R.layout.activity_main);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
+        ListView listView = (ListView) findViewById(R.id.list_view);
+        listView.setAdapter(adapter);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -69,6 +81,9 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                mMessageReceiver, new IntentFilter("service-status"));
 
         Intent intent = new Intent(this, CloudService.class);
         Log.d(TAG,"Binding CloudService");
@@ -89,6 +104,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         Log.d(TAG,"Unbinding AudioEncoderService");
         unbindService(mConnection);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(
+                mMessageReceiver);
         super.onDestroy();
     }
 
@@ -113,6 +130,18 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void setDefaultValues(boolean readAgain) {
+
+        if (readAgain) {
+            PreferenceManager.getDefaultSharedPreferences(this).edit().clear().apply();
+        }
+
+        PreferenceManager.setDefaultValues(this, R.xml.pref_audio_collector, readAgain);
+        PreferenceManager.setDefaultValues(this, R.xml.pref_file_remover, readAgain);
+        PreferenceManager.setDefaultValues(this, R.xml.pref_audio_encoder, readAgain);
+        PreferenceManager.setDefaultValues(this, R.xml.pref_cloud, readAgain);
     }
 
     private int integerPreferenceValue(int key) {

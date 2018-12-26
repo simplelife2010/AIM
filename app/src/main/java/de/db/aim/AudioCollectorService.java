@@ -14,7 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class AudioCollectorService extends Service {
+public class AudioCollectorService extends MonitorableService {
 
     private static final String TAG = AudioCollectorService.class.getSimpleName();
 
@@ -41,6 +41,7 @@ public class AudioCollectorService extends Service {
         Log.d(TAG,"Creating service");
         super.onCreate();
         sharedPreferences().registerOnSharedPreferenceChangeListener(mPreferenceChangeListener);
+        broadcastStatus("Initializing");
         setupService();
     }
 
