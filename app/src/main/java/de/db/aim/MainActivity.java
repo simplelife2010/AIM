@@ -135,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        Log.d(TAG,"Unbinding AudioEncoderService");
+        Log.d(TAG,"Unbinding CloudService");
         unbindService(mConnection);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(
                 mMessageReceiver);
