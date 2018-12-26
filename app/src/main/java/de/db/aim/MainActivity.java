@@ -21,15 +21,23 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.SimpleAdapter;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    CloudService mService;
-    boolean mBound = false;
+    private CloudService mService;
+    private boolean mBound = false;
+    private List<Map<String, String>> mServiceStatus;
     private ServiceConnection mConnection = new ServiceConnection() {
 
         @Override
@@ -51,9 +59,30 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String service = intent.getStringExtra("service");
-            Log.d(TAG, "Received from: " + service + " status: " + intent.getStringExtra("status"));
+            String status = intent.getStringExtra("status");
+            Log.d(TAG, "Received from: " + service + " status: " + status);
+            for (int i = 0; i < mServiceStatus.size(); i++) {
+                if (mServiceStatus.get(i).get("service").equals(service)) {
+                    mServiceStatus.remove(i);
+                }
+            }
+            Map<String, String> statusMap = new HashMap<String, String>();
+            statusMap.put("service", service);
+            statusMap.put("status", status);
+            mServiceStatus.add(statusMap);
+            Collections.sort(mServiceStatus, new Comparator<Map<String, String>>() {
+                @Override
+                public int compare(Map<String, String> lhs, Map<String, String> rhs) {
+                    return lhs.get("service").compareTo(rhs.get("service"));
+                }
+            });
+            SimpleAdapter adapter = new SimpleAdapter(MainActivity.this,
+                    mServiceStatus,
+                    android.R.layout.simple_list_item_2,
+                    new String[] {"service", "status"},
+                    new int[] {android.R.id.text1, android.R.id.text2});
             ListView listView = (ListView) findViewById(R.id.list_view);
-            ((ArrayAdapter<String>) listView.getAdapter()).add(service);
+            listView.setAdapter(adapter);
         }
     };
 
@@ -66,9 +95,16 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
+        mServiceStatus = new ArrayList<Map<String, String>>();
+        SimpleAdapter adapter = new SimpleAdapter(this,
+                mServiceStatus,
+                android.R.layout.simple_list_item_2,
+                new String[] {"service", "status"},
+                new int[] {android.R.id.text1, android.R.id.text2});
         ListView listView = (ListView) findViewById(R.id.list_view);
         listView.setAdapter(adapter);
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                mMessageReceiver, new IntentFilter("service-status"));
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -81,9 +117,6 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
-
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                mMessageReceiver, new IntentFilter("service-status"));
 
         Intent intent = new Intent(this, CloudService.class);
         Log.d(TAG,"Binding CloudService");

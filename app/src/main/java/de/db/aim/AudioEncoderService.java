@@ -59,6 +59,7 @@ public class AudioEncoderService extends MonitorableService implements AudioColl
             mService = binder.getService();
             mBound = true;
             mService.registerAudioCollectorListener(AudioEncoderService.this);
+            broadcastStatus("Processing");
             sharedPreferences().registerOnSharedPreferenceChangeListener(mPreferenceChangeListener);
         }
 
@@ -70,6 +71,7 @@ public class AudioEncoderService extends MonitorableService implements AudioColl
                 mCodec.stop();
                 mCodec.release();
             }
+            broadcastStatus("Idle");
             sharedPreferences().unregisterOnSharedPreferenceChangeListener(mPreferenceChangeListener);
             mBound = false;
         }
@@ -101,6 +103,7 @@ public class AudioEncoderService extends MonitorableService implements AudioColl
         broadcastStatus("Initializing");
         Log.d(TAG,"Binding AudioCollectorService");
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        broadcastStatus("Idle");
         scheduleFileRemoverJob();
     }
 
@@ -114,6 +117,7 @@ public class AudioEncoderService extends MonitorableService implements AudioColl
             mCodec.release();
         }
         cancelFileRemoverJob();
+        broadcastStatus("Terminated");
         super.onDestroy();
     }
 

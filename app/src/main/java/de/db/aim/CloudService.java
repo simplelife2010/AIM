@@ -91,6 +91,7 @@ public class CloudService extends MonitorableService implements AudioEncoderList
         sharedPreferences().unregisterOnSharedPreferenceChangeListener(mPreferenceChangeListener);
         Log.d(TAG,"Unbinding AudioEncoderService");
         unbindService(mConnection);
+        broadcastStatus("Terminated");
         super.onDestroy();
     }
 
@@ -145,6 +146,7 @@ public class CloudService extends MonitorableService implements AudioEncoderList
         connectOptions.setMqttVersion(MqttConnectOptions.MQTT_VERSION_DEFAULT);
 
         try {
+            broadcastStatus("Connecting");
             IMqttToken token = mMqttClient.connect(connectOptions, null, new IMqttConnectActionListener());
             Log.d(TAG, "MQTT connect token: " + token.toString());
         } catch (MqttException e) {
@@ -182,11 +184,13 @@ public class CloudService extends MonitorableService implements AudioEncoderList
             } else {
                 Log.d(TAG, "Connect to " + serverURI + " complete");
             }
+            broadcastStatus("Connected");
         }
 
         @Override
         public void connectionLost(Throwable cause) {
             Log.d(TAG, "MQTT Connection lost");
+            broadcastStatus("Disconnected");
         }
 
         @Override

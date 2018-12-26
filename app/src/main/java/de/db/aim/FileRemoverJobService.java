@@ -23,11 +23,13 @@ public class FileRemoverJobService extends MonitorableJobService {
     public boolean onStartJob(JobParameters jobParameters) {
         broadcastStatus("Initializing");
         new FileRemoverTask().execute(jobParameters);
+        broadcastStatus("Idle");
         return false;
     }
 
     @Override
     public boolean onStopJob(JobParameters jobParameters) {
+        broadcastStatus("Stopped");
         return false;
     }
 
@@ -47,6 +49,7 @@ public class FileRemoverJobService extends MonitorableJobService {
         @Override
         protected JobParameters doInBackground(JobParameters... jobParameters) {
 
+            broadcastStatus("Active");
             int numberOfFilesToKeep = integerPreferenceValue(R.string.pref_keep_files_key);
 
             Log.d(TAG,"Removing old audio files (keeping " + String.valueOf(numberOfFilesToKeep) + " files)...");
@@ -72,6 +75,7 @@ public class FileRemoverJobService extends MonitorableJobService {
             Log.d(TAG, "Deleting empty directories...Done");
 
             Log.d(TAG,"Removing old audio files...Done");
+            broadcastStatus("Idle");
             return jobParameters[0];
         }
 

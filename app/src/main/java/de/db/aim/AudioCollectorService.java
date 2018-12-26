@@ -51,6 +51,7 @@ public class AudioCollectorService extends MonitorableService {
         super.onDestroy();
         stopCapture();
         sharedPreferences().unregisterOnSharedPreferenceChangeListener(mPreferenceChangeListener);
+        broadcastStatus("Terminated");
     }
 
     @Override
@@ -98,6 +99,7 @@ public class AudioCollectorService extends MonitorableService {
                 bufferSizeInMilliseconds,
                 chunkSizeInMilliseconds,
                 frameLengthInMilliseconds));
+        broadcastStatus("Capturing");
     }
 
     private void stopCapture() {
@@ -114,6 +116,7 @@ public class AudioCollectorService extends MonitorableService {
             } catch (InterruptedException e) {
                 Log.d(TAG, "Waiting for worker to finish...Done");
             }
+            broadcastStatus("Stopped");
         }
     }
 
