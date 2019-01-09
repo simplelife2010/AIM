@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
     private CloudService mService;
     private boolean mBound = false;
-    private List<Map<String, String>> mServiceStatus;
+
     private ServiceConnection mConnection = new ServiceConnection() {
 
         @Override
@@ -55,36 +55,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String service = intent.getStringExtra("service");
-            String status = intent.getStringExtra("status");
-            Log.d(TAG, "Received from: " + service + " status: " + status);
-            for (int i = 0; i < mServiceStatus.size(); i++) {
-                if (mServiceStatus.get(i).get("service").equals(service)) {
-                    mServiceStatus.remove(i);
-                }
-            }
-            Map<String, String> statusMap = new HashMap<String, String>();
-            statusMap.put("service", service);
-            statusMap.put("status", status);
-            mServiceStatus.add(statusMap);
-            Collections.sort(mServiceStatus, new Comparator<Map<String, String>>() {
-                @Override
-                public int compare(Map<String, String> lhs, Map<String, String> rhs) {
-                    return lhs.get("service").compareTo(rhs.get("service"));
-                }
-            });
-            SimpleAdapter adapter = new SimpleAdapter(MainActivity.this,
-                    mServiceStatus,
-                    android.R.layout.simple_list_item_2,
-                    new String[] {"service", "status"},
-                    new int[] {android.R.id.text1, android.R.id.text2});
-            ListView listView = (ListView) findViewById(R.id.list_view);
-            listView.setAdapter(adapter);
-        }
-    };
+
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -95,16 +66,7 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        mServiceStatus = new ArrayList<Map<String, String>>();
-        SimpleAdapter adapter = new SimpleAdapter(this,
-                mServiceStatus,
-                android.R.layout.simple_list_item_2,
-                new String[] {"service", "status"},
-                new int[] {android.R.id.text1, android.R.id.text2});
-        ListView listView = (ListView) findViewById(R.id.list_view);
-        listView.setAdapter(adapter);
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                mMessageReceiver, new IntentFilter("service-status"));
+
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -137,8 +99,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         Log.d(TAG,"Unbinding CloudService");
         unbindService(mConnection);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(
-                mMessageReceiver);
         super.onDestroy();
     }
 
