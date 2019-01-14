@@ -1,9 +1,45 @@
 <html>
+
 <head>
     <title>WebNots - Static Page Example</title>
 </head>
 <body bgcolor="#f1f1f1" text="Red">
-<h1>Create Your Static Website</h1>
-Here is the content of your site.
+<div class="container">
+    <div id="waveform">
+        <!-- Here be the waveform -->
+    </div>
+    <div class="controls">
+        <div class="row">
+            <div class="col-sm-7">
+                <button class="btn btn-primary" data-action="play">
+                    <i class="glyphicon glyphicon-play"></i>
+                    Play /
+                    <i class="glyphicon glyphicon-pause"></i>
+                    Pause
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/wavesurfer.js"></script>
+<script>
+    console.log('Script start');
+    console.log(document);
+    console.log(document.querySelector('#waveform'));
+    var wavesurfer = WaveSurfer.create({
+    container: '#waveform',
+    waveColor: 'violet',
+    progressColor: 'purple'
+    });
+    wavesurfer.load('test.wav');
+
+    // Play button
+    var button = document.querySelector('[data-action="play"]');
+
+    button.addEventListener('click', wavesurfer.playPause.bind(wavesurfer));
+</script>
+
+
 </body>
 </html>

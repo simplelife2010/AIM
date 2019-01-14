@@ -30,6 +30,9 @@ public class AudioCollectorFragment extends Fragment {
         WebView webView = (WebView) view.findViewById(R.id.waveforms);
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
+        webSettings.setAllowContentAccess(true);
+        webSettings.setAllowFileAccess(true);
+        webSettings.setAllowFileAccessFromFileURLs(true);
         webView.setWebViewClient(new WebViewClient());
         webView.loadUrl("file:///android_asset/sample.html");
         return view;
